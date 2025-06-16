@@ -44,7 +44,10 @@ func TestGetConfigWhenFileEmptyThenGetVariablesEnvironment(t *testing.T) {
 	os.Setenv("DB_DRIVER_NAME", "postgres")
 	defer os.Unsetenv("DB_DRIVER_NAME")
 
-	tempDir, _ := os.MkdirTemp(".", "testNotArg")
+	tempDir, err := os.MkdirTemp(".", "testNotArg")
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer os.Remove(tempDir)
 
 	rsl := common.GetConfig(tempDir)
@@ -64,8 +67,15 @@ func TestGetConfigWhenHaveCorrectFileAndVariablesEnvThenGetFile(t *testing.T) {
 	defer os.Unsetenv("DB_DRIV")
 	defer os.Unsetenv("DB_D")
 
-	tempFile, _ := os.CreateTemp(".", "test.env")
-	tempFile.WriteString("DB_DRIVER_NAME=postgres\nDB_DSN=host=127.0.0.1")
+	tempFile, err := os.CreateTemp(".", "test.env")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = tempFile.WriteString("DB_DRIVER_NAME=postgres\nDB_DSN=host=127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	tempFile.Close()
 	defer os.Remove(tempFile.Name())
 
@@ -91,11 +101,17 @@ func TestGetConfigWhenHaveCorrectFileAndVariablesEnvThenGetVariable(t *testing.T
 	defer os.Unsetenv("DB_DSN")
 	defer os.Unsetenv("DB_DRIVER_NAME")
 
-	tempFile, _ := os.CreateTemp(".", "test.env")
-	tempFile.WriteString("DB_DRIVER_NAME=oracle\n")
-	tempFile.WriteString("DB_DSN=host=130.0.0.1")
-	tempFile.Close()
+	tempFile, err := os.CreateTemp(".", "test.env")
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer os.Remove(tempFile.Name())
+
+	_, err = tempFile.WriteString("DB_DRIVER_NAME=oracle\nDB_DSN=host=130.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tempFile.Close()
 
 	rsl := common.GetConfig(tempFile.Name())
 
