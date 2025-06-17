@@ -1,7 +1,6 @@
-package tests
+package common
 
 import (
-	"idm/inner/common"
 	"os"
 	"testing"
 )
@@ -13,7 +12,7 @@ func TestGetConfigWhenNotFileThenGetVariablesEnvironment(t *testing.T) {
 
 	defer os.Unsetenv("DB_DRIVER_NAME")
 	defer os.Unsetenv("DB_DSN")
-	rls := common.GetConfig(os.Getenv(""))
+	rls := GetConfig(os.Getenv(""))
 	t.Run("Should read from variable environment", func(t *testing.T) {
 		if rls.DbDriverName != "postgres" {
 			t.Errorf("Result DbDriverName should be postgress, but got %s.", rls.DbDriverName)
@@ -31,7 +30,7 @@ func TestGetConfigWhenNotFileAndThenEmptyVariablesThenGetEmptyString(t *testing.
 		t.Fatal(err)
 	}
 	defer os.Remove(tempDir)
-	rsl := common.GetConfig(tempDir)
+	rsl := GetConfig(tempDir)
 	t.Run("Should return empty string", func(t *testing.T) {
 		if rsl.DbDriverName != "" {
 			t.Error("Not empty.")
@@ -50,7 +49,7 @@ func TestGetConfigWhenFileEmptyThenGetVariablesEnvironment(t *testing.T) {
 	}
 	defer os.Remove(tempDir)
 
-	rsl := common.GetConfig(tempDir)
+	rsl := GetConfig(tempDir)
 
 	t.Run("Should return empty string", func(t *testing.T) {
 		if rsl.DbDriverName != "postgres" {
@@ -79,7 +78,7 @@ func TestGetConfigWhenHaveCorrectFileAndVariablesEnvThenGetFile(t *testing.T) {
 	tempFile.Close()
 	defer os.Remove(tempFile.Name())
 
-	rsl := common.GetConfig(tempFile.Name())
+	rsl := GetConfig(tempFile.Name())
 
 	t.Run("Should return strings from file", func(t *testing.T) {
 		if rsl.DbDriverName != "postgres" {
@@ -113,7 +112,7 @@ func TestGetConfigWhenHaveCorrectFileAndVariablesEnvThenGetVariable(t *testing.T
 	}
 	tempFile.Close()
 
-	rsl := common.GetConfig(tempFile.Name())
+	rsl := GetConfig(tempFile.Name())
 
 	t.Run("Should return strings from Env", func(t *testing.T) {
 		if rsl.DbDriverName != "postgres" {
