@@ -3,10 +3,10 @@ package employee
 import "time"
 
 type EmployeeEntity struct {
-	id        int64     `db:"id"`
-	name      string    `db:"name"`
-	surname   string    `db:"surname"`
-	age       int8      `db:"age"`
-	create_at time.Time `db:"create_at"`
-	update_at time.Time `db:"update_at"`
+	Id        int64     `db:"id"`
+	Name      string    `db:"name"`
+	Surname   string    `db:"surname"`
+	Age       int8      `db:"age"`
+	Create_at time.Time `db:"create_at"`
+	Update_at time.Time `db:"update_at"`
 }

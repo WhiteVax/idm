@@ -15,7 +15,7 @@ func NewRoleRepository(database *sqlx.DB) *RoleRepository {
 
 func (r *RoleRepository) Add(role RoleEntity) (id int64, err error) {
 	query := `INSERT INTO role(name, create_at, updated_at) VALUES ($1, $2, $3) RETURNING id`
-	err = r.db.QueryRow(query, role.name, role.create_at, role.update_at).Scan(&id)
+	err = r.db.QueryRow(query, role.Name, role.Create_at, role.Update_at).Scan(&id)
 	if err != nil {
 		return -1, err
 	}

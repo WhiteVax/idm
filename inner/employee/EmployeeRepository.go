@@ -15,7 +15,7 @@ func NewEmployeeRepository(database *sqlx.DB) *EmployeeRepository {
 
 func (r *EmployeeRepository) Add(employee EmployeeEntity) (id int64, err error) {
 	query := `INSERT INTO employee(name, surname, age, create_at, updated_at) VALUES ($1, $2, $3, $4, $5) RETURNING id`
-	err = r.db.QueryRow(query, employee.name, employee.surname, employee.age, employee.create_at, employee.update_at).Scan(&id)
+	err = r.db.QueryRow(query, employee.Name, employee.Surname, employee.Age, employee.Create_at, employee.Update_at).Scan(&id)
 	if err != nil {
 		return -1, err
 	}
