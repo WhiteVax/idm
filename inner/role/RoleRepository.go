@@ -56,6 +56,9 @@ func (r *RoleRepository) DeleteBySliceIds(ids []int64) (bool, error) {
 		return false, errors.New("Roles ids is empty")
 	}
 	query, args, err := sqlx.In("DELETE FROM role WHERE id IN (?)", ids)
+	if err != nil {
+		return false, err
+	}
 	query = r.db.Rebind(query)
 	result, err := r.db.Exec(query, args...)
 	if err != nil {
