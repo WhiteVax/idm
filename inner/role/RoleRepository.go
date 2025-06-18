@@ -2,6 +2,7 @@ package role
 
 import (
 	"errors"
+	"fmt"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -14,12 +15,19 @@ func NewRoleRepository(database *sqlx.DB) *RoleRepository {
 }
 
 func (r *RoleRepository) Add(role RoleEntity) (id int64, err error) {
-	query := `INSERT INTO role(name, create_at, updated_at) VALUES ($1, $2, $3) RETURNING id`
-	err = r.db.QueryRow(query, role.Name, role.Create_at, role.Update_at).Scan(&id)
+	query := `INSERT INTO role(name, create_at, update_at)
+      	 	  VALUES (:name, :create_at, :update_at)
+      	 	  RETURNING id`
+	rows, err := r.db.NamedQuery(query, &role)
 	if err != nil {
-		return -1, err
+		return -1, fmt.Errorf("Failed to insert role: %v", err)
 	}
-	return id, nil
+	defer rows.Close()
+
+	if rows.Next() && rows.Scan(&id) == nil {
+		return id, nil
+	}
+	return -1, err
 }
 
 func (r *RoleRepository) FindById(id int64) (role RoleEntity, err error) {
@@ -51,19 +59,30 @@ func (r *RoleRepository) DeleteById(id int64) (bool, error) {
 	return rowInter > 0, err
 }
 
-func (r *RoleRepository) DeleteBySliceIds(ids []int64) (bool, error) {
+func (r *RoleRepository) DeleteBySliceIds(ids []int64) ([]int64, error) {
 	if len(ids) == 0 {
-		return false, errors.New("Roles ids is empty")
+		return nil, errors.New("Roles ids is empty")
 	}
-	query, args, err := sqlx.In("DELETE FROM role WHERE id IN (?)", ids)
+
+	query, args, err := sqlx.In("DELETE FROM role WHERE id IN (?) RETURNING id", ids)
 	if err != nil {
-		return false, err
+		return nil, fmt.Errorf("Failed to build SQL IN clause: %w", err)
 	}
+
 	query = r.db.Rebind(query)
-	result, err := r.db.Exec(query, args...)
+	rows, err := r.db.Queryx(query, args...)
 	if err != nil {
-		return false, err
+		return nil, fmt.Errorf("Failed to delete roles: %w", err)
 	}
-	rowIds, err := result.RowsAffected()
-	return rowIds > 0, err
+	defer rows.Close()
+
+	var deletedIDs []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, fmt.Errorf("Failed to scan deleted ID: %w", err)
+		}
+		deletedIDs = append(deletedIDs, id)
+	}
+	return deletedIDs, nil
 }
