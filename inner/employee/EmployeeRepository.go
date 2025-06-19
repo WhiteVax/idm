@@ -1,8 +1,6 @@
 package employee
 
 import (
-	"errors"
-	"fmt"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -19,12 +17,8 @@ func (r *EmployeeRepository) Add(employee EmployeeEntity) (id int64, err error) 
 			  VALUES (:name, :surname, :age, :create_at, :updated_at) 
 			  RETURNING id`
 	rows, err := r.db.NamedQuery(query, &employee)
-	if err != nil {
-		return -1, fmt.Errorf("Failed to insert employee: %v", err)
-	}
-	defer rows.Close()
 
-	if rows.Next() && rows.Scan(&id) == nil {
+	if err == nil && rows.Next() && rows.Scan(&id) == nil {
 		return id, nil
 	}
 	return -1, err
@@ -60,27 +54,22 @@ func (r *EmployeeRepository) DeleteById(id int64) (bool, error) {
 }
 
 func (r *EmployeeRepository) DeleteBySliceIds(ids []int64) ([]int64, error) {
-	if len(ids) == 0 {
-		return nil, errors.New("Employees ids is empty")
-	}
-
 	query, args, err := sqlx.In("DELETE FROM employee WHERE id IN (?) RETURNING id", ids)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to build SQL IN clause: %w", err)
+		return nil, err
 	}
 
 	query = r.db.Rebind(query)
 	rows, err := r.db.Queryx(query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to delete employees: %w", err)
+		return nil, err
 	}
-	defer rows.Close()
 
 	var deletedIDs []int64
 	for rows.Next() {
 		var id int64
 		if err := rows.Scan(&id); err != nil {
-			return nil, fmt.Errorf("Failed to scan deleted ID: %w", err)
+			return nil, err
 		}
 		deletedIDs = append(deletedIDs, id)
 	}
