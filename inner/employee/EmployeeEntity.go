@@ -7,6 +7,6 @@ type EmployeeEntity struct {
 	Name      string    `db:"name"`
 	Surname   string    `db:"surname"`
 	Age       int8      `db:"age"`
-	CreatesAt time.Time `db:"created_at"`
+	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
 }

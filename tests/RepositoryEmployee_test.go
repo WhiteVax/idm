@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func TestRepository(t *testing.T) {
+func TestRepositoryEmployee(t *testing.T) {
 	a := assert.New(t)
 
 	var db = database.ConnectDb()
@@ -23,7 +23,7 @@ func TestRepository(t *testing.T) {
 		}
 	}()
 	var employeeRepository = employee.NewEmployeeRepository(db)
-	var fixture = NewFixture(employeeRepository)
+	var fixture = NewFixtureEmployee(employeeRepository)
 
 	t.Run("Find an employee by id", func(t *testing.T) {
 		var newEmployeeId = fixture.Employee("Name", "Surname", 18, time.Now(), time.Now())
@@ -36,7 +36,7 @@ func TestRepository(t *testing.T) {
 		a.NotEmpty(got.Name)
 		a.NotEmpty(got.Surname)
 		a.NotEmpty(got.Age)
-		a.NotEmpty(got.CreatesAt)
+		a.NotEmpty(got.CreatedAt)
 		a.NotEmpty(got.UpdatedAt)
 		a.Equal("Name", got.Name)
 	})
@@ -51,7 +51,7 @@ func TestEmployeeRepositoryWhenFindAll(t *testing.T) {
 	})
 
 	repo := employee.NewEmployeeRepository(db)
-	fixture := NewFixture(repo)
+	fixture := NewFixtureEmployee(repo)
 
 	fixture.Employee("John", "Smith", 18, time.Now(), time.Now())
 	fixture.Employee("John", "Vi", 60, time.Now(), time.Now())
@@ -72,7 +72,7 @@ func TestEmployeeRepositoryWhenFindBySliceIds(t *testing.T) {
 	})
 
 	repo := employee.NewEmployeeRepository(db)
-	fixture := NewFixture(repo)
+	fixture := NewFixtureEmployee(repo)
 
 	id1 := fixture.Employee("Alice", "Walker", 30, time.Now(), time.Now())
 	id2 := fixture.Employee("Bob", "Johnson", 35, time.Now(), time.Now())
@@ -98,7 +98,7 @@ func TestEmployeeRepositoryWhenDeleteById(t *testing.T) {
 	})
 
 	repo := employee.NewEmployeeRepository(db)
-	fixture := NewFixture(repo)
+	fixture := NewFixtureEmployee(repo)
 
 	id := fixture.Employee("Deleted", "Sara", 30, time.Now(), time.Now())
 
@@ -124,7 +124,7 @@ func TestEmployeeRepositoryWhenDeleteByIds(t *testing.T) {
 	})
 
 	repo := employee.NewEmployeeRepository(db)
-	fixture := NewFixture(repo)
+	fixture := NewFixtureEmployee(repo)
 
 	id1 := fixture.Employee("Deleted1", "Sara", 30, time.Now(), time.Now())
 	id2 := fixture.Employee("Deleted2", "Sara", 30, time.Now(), time.Now())

@@ -7,18 +7,18 @@ import (
 	"time"
 )
 
-type Fixture struct {
-	employees *employee.EmployeeRepository
+type FixtureEmployee struct {
+	employee *employee.EmployeeRepository
 }
 
-func NewFixture(employees *employee.EmployeeRepository) *Fixture {
-	if err := InitSchema(employees); err != nil {
+func NewFixtureEmployee(employee *employee.EmployeeRepository) *FixtureEmployee {
+	if err := InitSchemaEmployee(employee); err != nil {
 		panic(err)
 	}
-	return &Fixture{employees}
+	return &FixtureEmployee{employee}
 }
 
-func InitSchema(r *employee.EmployeeRepository) error {
+func InitSchemaEmployee(r *employee.EmployeeRepository) error {
 	schema := `
 	CREATE TABLE IF NOT EXISTS employee (
 		id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -36,16 +36,16 @@ func InitSchema(r *employee.EmployeeRepository) error {
 	return nil
 }
 
-func (f *Fixture) Employee(name string, surname string, age int8,
-	createAt time.Time, updateAt time.Time) int64 {
+func (f *FixtureEmployee) Employee(name string, surname string, age int8,
+	createdAt time.Time, updatedAt time.Time) int64 {
 	var entity = employee.EmployeeEntity{
 		Name:      name,
 		Surname:   surname,
 		Age:       age,
-		CreatesAt: createAt,
-		UpdatedAt: updateAt,
+		CreatedAt: createdAt,
+		UpdatedAt: updatedAt,
 	}
-	var newId, err = f.employees.Add(entity)
+	var newId, err = f.employee.Add(entity)
 	if err != nil {
 		panic(err)
 	}

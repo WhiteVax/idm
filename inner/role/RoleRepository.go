@@ -8,13 +8,17 @@ type RoleRepository struct {
 	db *sqlx.DB
 }
 
+func (r *RoleRepository) DB() *sqlx.DB {
+	return r.db
+}
+
 func NewRoleRepository(database *sqlx.DB) *RoleRepository {
 	return &RoleRepository{db: database}
 }
 
 func (r *RoleRepository) Add(role RoleEntity) (id int64, err error) {
-	query := `INSERT INTO role(name, create_at, update_at)
-      	 	  VALUES (:name, :create_at, :update_at)
+	query := `INSERT INTO role(name, created_at, updated_at)
+      	 	  VALUES (:name, :created_at, :updated_at)
       	 	  RETURNING id`
 	rows, err := r.db.NamedQuery(query, &role)
 
