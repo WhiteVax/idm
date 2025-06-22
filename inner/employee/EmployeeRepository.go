@@ -8,13 +8,17 @@ type EmployeeRepository struct {
 	db *sqlx.DB
 }
 
+func (r *EmployeeRepository) DB() *sqlx.DB {
+	return r.db
+}
+
 func NewEmployeeRepository(database *sqlx.DB) *EmployeeRepository {
 	return &EmployeeRepository{db: database}
 }
 
 func (r *EmployeeRepository) Add(employee EmployeeEntity) (id int64, err error) {
-	query := `INSERT INTO employee(name, surname, age, create_at, updated_at) 
-			  VALUES (:name, :surname, :age, :create_at, :updated_at) 
+	query := `INSERT INTO employee(name, surname, age, created_at, updated_at) 
+			  VALUES (:name, :surname, :age, :created_at, :updated_at) 
 			  RETURNING id`
 	rows, err := r.db.NamedQuery(query, &employee)
 
