@@ -4,19 +4,19 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type EmployeeRepository struct {
+type Repository struct {
 	db *sqlx.DB
 }
 
-func (r *EmployeeRepository) DB() *sqlx.DB {
+func (r *Repository) DB() *sqlx.DB {
 	return r.db
 }
 
-func NewEmployeeRepository(database *sqlx.DB) *EmployeeRepository {
-	return &EmployeeRepository{db: database}
+func NewEmployeeRepository(database *sqlx.DB) *Repository {
+	return &Repository{db: database}
 }
 
-func (r *EmployeeRepository) Add(employee EmployeeEntity) (id int64, err error) {
+func (r *Repository) Add(employee Entity) (id int64, err error) {
 	query := `INSERT INTO employee(name, surname, age, created_at, updated_at) 
 			  VALUES (:name, :surname, :age, :created_at, :updated_at) 
 			  RETURNING id`
@@ -28,17 +28,17 @@ func (r *EmployeeRepository) Add(employee EmployeeEntity) (id int64, err error) 
 	return -1, err
 }
 
-func (r *EmployeeRepository) FindById(id int64) (employee EmployeeEntity, err error) {
+func (r *Repository) FindById(id int64) (employee Entity, err error) {
 	err = r.db.Get(&employee, "SELECT * FROM employee WHERE id = $1", id)
 	return employee, err
 }
 
-func (r *EmployeeRepository) FindAll() (employees []EmployeeEntity, err error) {
+func (r *Repository) FindAll() (employees []Entity, err error) {
 	err = r.db.Select(&employees, "SELECT * FROM employee")
 	return employees, err
 }
 
-func (r *EmployeeRepository) FindBySliceIds(ids []int64) (employees []EmployeeEntity, err error) {
+func (r *Repository) FindBySliceIds(ids []int64) (employees []Entity, err error) {
 	query, args, err := sqlx.In("SELECT * FROM employee WHERE id IN (?)", ids)
 	if err != nil {
 		return employees, err
@@ -48,7 +48,7 @@ func (r *EmployeeRepository) FindBySliceIds(ids []int64) (employees []EmployeeEn
 	return employees, err
 }
 
-func (r *EmployeeRepository) DeleteById(id int64) (bool, error) {
+func (r *Repository) DeleteById(id int64) (bool, error) {
 	result, err := r.db.Exec("DELETE FROM employee WHERE id = $1", id)
 	if err != nil {
 		return false, err
@@ -57,7 +57,7 @@ func (r *EmployeeRepository) DeleteById(id int64) (bool, error) {
 	return rowInter > 0, err
 }
 
-func (r *EmployeeRepository) DeleteBySliceIds(ids []int64) ([]int64, error) {
+func (r *Repository) DeleteBySliceIds(ids []int64) ([]int64, error) {
 	query, args, err := sqlx.In("DELETE FROM employee WHERE id IN (?) RETURNING id", ids)
 	if err != nil {
 		return nil, err

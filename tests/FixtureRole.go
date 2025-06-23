@@ -7,17 +7,17 @@ import (
 )
 
 type FixtureRole struct {
-	role *role.RoleRepository
+	role *role.Repository
 }
 
-func NewFixtureRole(role *role.RoleRepository) *FixtureRole {
+func NewFixtureRole(role *role.Repository) *FixtureRole {
 	if err := InitSchemaRole(role); err != nil {
 		panic(err)
 	}
 	return &FixtureRole{role}
 }
 
-func InitSchemaRole(r *role.RoleRepository) error {
+func InitSchemaRole(r *role.Repository) error {
 	schema := `CREATE TABLE IF NOT EXISTS role (
     id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name        TEXT NOT NULL UNIQUE,
@@ -31,7 +31,7 @@ func InitSchemaRole(r *role.RoleRepository) error {
 }
 
 func (f *FixtureRole) Role(name string, createdAt time.Time, updatedAt time.Time) int64 {
-	var entity = role.RoleEntity{
+	var entity = role.Entity{
 		Name:      name,
 		CreatedAt: createdAt,
 		UpdatedAt: updatedAt,
