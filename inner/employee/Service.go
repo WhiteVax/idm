@@ -36,24 +36,24 @@ func (svc *Service) FindById(id int64) (Response, error) {
 	return entity.toResponse(), nil
 }
 
-func (svc *Service) Add(entity Entity) (Response, error) {
-	if entity == (Entity{}) {
+func (svc *Service) Add(employee Entity) (Response, error) {
+	if employee == (Entity{}) {
 		return Response{}, fmt.Errorf("Entity is empty, please check the employee")
 	}
-	if entity.Name == "" || entity.Surname == "" || entity.Age <= 16 {
-		return Response{}, fmt.Errorf("Invalid field, please check the employee %+v", entity)
+	if employee.Name == "" || employee.Surname == "" || employee.Age <= 16 {
+		return Response{}, fmt.Errorf("Invalid field, please check the employee %+v", employee)
 	}
-	var rsl, err = svc.repo.Add(entity)
+	var rsl, err = svc.repo.Add(employee)
 	if err != nil {
-		return Response{}, fmt.Errorf("Error adding employee %+v: %w", entity, err)
+		return Response{}, fmt.Errorf("Error adding employee %+v: %w", employee, err)
 	}
 	return Response{
 		Id:        rsl,
-		Name:      entity.Name,
-		Surname:   entity.Surname,
-		Age:       entity.Age,
-		CreatedAt: entity.CreatedAt,
-		UpdatedAt: entity.UpdatedAt}, nil
+		Name:      employee.Name,
+		Surname:   employee.Surname,
+		Age:       employee.Age,
+		CreatedAt: employee.CreatedAt,
+		UpdatedAt: employee.UpdatedAt}, nil
 }
 
 func (svc *Service) FindByIds(ids []int64) ([]Response, error) {
@@ -87,13 +87,17 @@ func (svc *Service) DeleteByIds(ids []int64) ([]Response, error) {
 	return responses, nil
 }
 
-func (svc *Service) DeleteById(id int64) (string, error) {
+func (svc *Service) DeleteById(id int64) (Response, error) {
 	if id <= 0 {
-		return "", fmt.Errorf("Wrong id: %d", id)
+		return Response{}, fmt.Errorf("Wrong id: %d", id)
 	}
 	var rsl, err = svc.repo.DeleteById(id)
 	if err != nil || !rsl {
-		return "", fmt.Errorf("Error deleting employee with id %d: %w", id, err)
+		return Response{}, fmt.Errorf("Error deleting employee with id %d: %w", id, err)
 	}
-	return fmt.Sprintf("Employee with id %d deleted", id), nil
+	return Response{Id: id}, nil
+}
+
+func (svc *Service) FindAll() (employees []Entity, err error) {
+	return svc.repo.FindAll()
 }
