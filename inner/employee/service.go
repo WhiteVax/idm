@@ -33,7 +33,7 @@ func (svc *Service) FindById(id int64) (Response, error) {
 	if err != nil {
 		return Response{}, fmt.Errorf("Error finding employee with id %d: %w", id, err)
 	}
-	return entity.toResponse(), nil
+	return entity.ToResponse(), nil
 }
 
 func (svc *Service) Add(employee Entity) (Response, error) {
@@ -67,7 +67,7 @@ func (svc *Service) FindByIds(ids []int64) ([]Response, error) {
 
 	responses := make([]Response, 0, len(rsl))
 	for _, e := range rsl {
-		responses = append(responses, e.toResponse())
+		responses = append(responses, e.ToResponse())
 	}
 	return responses, nil
 }
@@ -98,6 +98,13 @@ func (svc *Service) DeleteById(id int64) (Response, error) {
 	return Response{Id: id}, nil
 }
 
-func (svc *Service) FindAll() (employees []Entity, err error) {
-	return svc.repo.FindAll()
+func (svc *Service) FindAll() (employees []Response, err error) {
+	rsl, err := svc.repo.FindAll()
+	if err != nil {
+		return []Response{}, fmt.Errorf("Error finding employees: %w", err)
+	}
+	for _, e := range rsl {
+		employees = append(employees, e.ToResponse())
+	}
+	return employees, nil
 }
