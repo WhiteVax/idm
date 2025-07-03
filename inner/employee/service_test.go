@@ -1,10 +1,9 @@
-package tests
+package employee
 
 import (
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"idm/inner/employee"
 	"testing"
 	"time"
 )
@@ -13,24 +12,24 @@ type MockEmployeeRepo struct {
 	mock.Mock
 }
 
-type StubRepo struct {
-	Employees []employee.Entity
+type StubRepoEmployee struct {
+	Employees []Entity
 	Err       error
 }
 
-func (m *MockEmployeeRepo) Add(entity employee.Entity) (int64, error) {
+func (m *MockEmployeeRepo) Add(entity Entity) (int64, error) {
 	args := m.Called(entity)
 	return args.Get(0).(int64), args.Error(1)
 }
 
-func (m *MockEmployeeRepo) FindById(id int64) (employee.Entity, error) {
+func (m *MockEmployeeRepo) FindById(id int64) (Entity, error) {
 	args := m.Called(id)
-	return args.Get(0).(employee.Entity), args.Error(1)
+	return args.Get(0).(Entity), args.Error(1)
 }
 
-func (m *MockEmployeeRepo) FindAll() ([]employee.Entity, error) {
+func (m *MockEmployeeRepo) FindAll() ([]Entity, error) {
 	args := m.Called()
-	return args.Get(0).([]employee.Entity), args.Error(1)
+	return args.Get(0).([]Entity), args.Error(1)
 }
 
 func (m *MockEmployeeRepo) DeleteById(id int64) (bool, error) {
@@ -43,9 +42,9 @@ func (m *MockEmployeeRepo) DeleteBySliceIds(ids []int64) ([]int64, error) {
 	return args.Get(0).([]int64), args.Error(1)
 }
 
-func (m *MockEmployeeRepo) FindBySliceIds(ids []int64) ([]employee.Entity, error) {
+func (m *MockEmployeeRepo) FindBySliceIds(ids []int64) ([]Entity, error) {
 	args := m.Called(ids)
-	return args.Get(0).([]employee.Entity), args.Error(1)
+	return args.Get(0).([]Entity), args.Error(1)
 }
 
 func TestFindById(t *testing.T) {
@@ -53,9 +52,9 @@ func TestFindById(t *testing.T) {
 
 	t.Run("Should return found employee", func(t *testing.T) {
 		repo := new(MockEmployeeRepo)
-		svc := employee.NewService(repo)
+		svc := NewService(repo)
 
-		entity := employee.Entity{
+		entity := Entity{
 			Id:        int64(1),
 			Name:      "John",
 			Surname:   "Doe",
@@ -75,22 +74,22 @@ func TestFindById(t *testing.T) {
 
 	t.Run("Should return error if id <= 0", func(t *testing.T) {
 		repo := new(MockEmployeeRepo)
-		svc := employee.NewService(repo)
+		svc := NewService(repo)
 
 		got, err := svc.FindById(0)
 
 		a.Error(err)
-		a.Equal(employee.Response{}, got)
+		a.Equal(Response{}, got)
 	})
 }
 
 func TestAdd(t *testing.T) {
 	a := assert.New(t)
 	repo := new(MockEmployeeRepo)
-	svc := employee.NewService(repo)
+	svc := NewService(repo)
 
 	t.Run("Should add employee", func(t *testing.T) {
-		entity := employee.Entity{
+		entity := Entity{
 			Id:        1,
 			Name:      "John",
 			Surname:   "Doe",
@@ -100,7 +99,7 @@ func TestAdd(t *testing.T) {
 		}
 
 		expectedId := int64(1)
-		entityExpected := employee.Response{
+		entityExpected := Response{
 			Id:        1,
 			Name:      entity.Name,
 			Surname:   entity.Surname,
@@ -117,15 +116,15 @@ func TestAdd(t *testing.T) {
 	})
 
 	t.Run("Should return error if employee empty", func(t *testing.T) {
-		entity := employee.Entity{}
+		entity := Entity{}
 		got, err := svc.Add(entity)
-		a.Equal(employee.Response{}, got)
+		a.Equal(Response{}, got)
 		a.Error(err)
 		a.Contains(err.Error(), "Entity is empty, please check the employee")
 	})
 
 	t.Run("Should return error if any employee field is empty", func(t *testing.T) {
-		entity := employee.Entity{
+		entity := Entity{
 			Id:        0,
 			Name:      "John",
 			Surname:   "",
@@ -134,7 +133,7 @@ func TestAdd(t *testing.T) {
 			UpdatedAt: time.Now(),
 		}
 		got, err := svc.Add(entity)
-		a.Equal(employee.Response{}, got)
+		a.Equal(Response{}, got)
 		a.Error(err)
 	})
 }
@@ -142,9 +141,9 @@ func TestAdd(t *testing.T) {
 func TestFindAll(t *testing.T) {
 	a := assert.New(t)
 	repo := new(MockEmployeeRepo)
-	svc := employee.NewService(repo)
+	svc := NewService(repo)
 	t.Run("Should find empty slice employees", func(t *testing.T) {
-		repo.On("FindAll").Return([]employee.Entity(nil), nil)
+		repo.On("FindAll").Return([]Entity(nil), nil)
 		got, err := svc.FindAll()
 		a.Nil(err)
 		a.Len(got, 0)
@@ -154,25 +153,25 @@ func TestFindAll(t *testing.T) {
 func TestDeleteById(t *testing.T) {
 	a := assert.New(t)
 	repo := new(MockEmployeeRepo)
-	svc := employee.NewService(repo)
+	svc := NewService(repo)
 	t.Run("Should delete employee", func(t *testing.T) {
 		repo.On("DeleteById", int64(1)).Return(true, nil)
 		got, err := svc.DeleteById(1)
 		a.Nil(err)
-		a.Equal(employee.Response{Id: 1}, got)
+		a.Equal(Response{Id: 1}, got)
 	})
 
 	t.Run("Should return error if id <= 0", func(t *testing.T) {
 		repo.On("DeleteById", int64(0)).Return(false, errors.New("Wrong id: 1"))
 		got, err := svc.DeleteById(0)
-		a.Equal(employee.Response{}, got)
+		a.Equal(Response{}, got)
 		a.Error(err)
 	})
 
 	t.Run("Should return error if any employee field is empty", func(t *testing.T) {
 		repo.On("DeleteById", int64(5)).Return(false, errors.New("Error deleting employee with id"))
 		got, err := svc.DeleteById(5)
-		a.Equal(employee.Response{}, got)
+		a.Equal(Response{}, got)
 		a.Error(err)
 	})
 }
@@ -180,12 +179,12 @@ func TestDeleteById(t *testing.T) {
 func TestFindByIds(t *testing.T) {
 	a := assert.New(t)
 	mockRepo := new(MockEmployeeRepo)
-	svc := employee.NewService(mockRepo)
+	svc := NewService(mockRepo)
 
 	t.Run("Should return finding employees", func(t *testing.T) {
 		// Stub
-		stub := &StubRepo{
-			Employees: []employee.Entity{
+		stub := &StubRepoEmployee{
+			Employees: []Entity{
 				{
 					Id:        1,
 					Name:      "John",
@@ -226,12 +225,12 @@ func TestFindByIds(t *testing.T) {
 func TestDeleteByIds(t *testing.T) {
 	a := assert.New(t)
 	mockRepo := new(MockEmployeeRepo)
-	svc := employee.NewService(mockRepo)
+	svc := NewService(mockRepo)
 	t.Run("Should delete employee", func(t *testing.T) {
 		ids := []int64{1, 2}
 		mockRepo.On("DeleteBySliceIds", ids).Return(ids, nil)
 		got, err := svc.DeleteByIds(ids)
-		expected := []employee.Response{{Id: 1}, {Id: 2}}
+		expected := []Response{{Id: 1}, {Id: 2}}
 		a.Nil(err)
 		a.Equal(expected, got)
 	})

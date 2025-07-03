@@ -9,7 +9,7 @@ type Entity struct {
 	UpdatedAt time.Time `db:"updated_at"`
 }
 
-func (e *Entity) toResponse() Response {
+func (e *Entity) ToResponse() Response {
 	return Response{
 		Id:        e.Id,
 		Name:      e.Name,
