@@ -8,17 +8,17 @@ import (
 )
 
 type FixtureEmployee struct {
-	employee *employee.EmployeeRepository
+	employee *employee.Repository
 }
 
-func NewFixtureEmployee(employee *employee.EmployeeRepository) *FixtureEmployee {
+func NewFixtureEmployee(employee *employee.Repository) *FixtureEmployee {
 	if err := InitSchemaEmployee(employee); err != nil {
 		panic(err)
 	}
 	return &FixtureEmployee{employee}
 }
 
-func InitSchemaEmployee(r *employee.EmployeeRepository) error {
+func InitSchemaEmployee(r *employee.Repository) error {
 	schema := `
 	CREATE TABLE IF NOT EXISTS employee (
 		id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -38,7 +38,7 @@ func InitSchemaEmployee(r *employee.EmployeeRepository) error {
 
 func (f *FixtureEmployee) Employee(name string, surname string, age int8,
 	createdAt time.Time, updatedAt time.Time) int64 {
-	var entity = employee.EmployeeEntity{
+	var entity = employee.Entity{
 		Name:      name,
 		Surname:   surname,
 		Age:       age,

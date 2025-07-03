@@ -22,7 +22,7 @@ func TestRepositoryRole(t *testing.T) {
 			clearDatabase()
 		}
 	}()
-	var roleRepository = role.NewRoleRepository(db)
+	var roleRepository = role.NewRepository(db)
 	var fixture = NewFixtureRole(roleRepository)
 
 	t.Run("Find an role by id", func(t *testing.T) {
@@ -48,7 +48,7 @@ func TestRoleRepositoryWhenFindAll(t *testing.T) {
 		db.MustExec("DELETE FROM role")
 	})
 
-	repo := role.NewRoleRepository(db)
+	repo := role.NewRepository(db)
 	fixture := NewFixtureRole(repo)
 
 	fixture.Role("Guest", time.Now(), time.Now())
@@ -69,7 +69,7 @@ func TestRoleRepositoryWhenFindBySliceIds(t *testing.T) {
 		db.MustExec("DELETE FROM role")
 	})
 
-	repo := role.NewRoleRepository(db)
+	repo := role.NewRepository(db)
 	fixture := NewFixtureRole(repo)
 
 	id1 := fixture.Role("Guest", time.Now(), time.Now())
@@ -95,7 +95,7 @@ func TestRoleRepositoryWhenDeleteById(t *testing.T) {
 		db.MustExec("DELETE FROM role")
 	})
 
-	repo := role.NewRoleRepository(db)
+	repo := role.NewRepository(db)
 	fixture := NewFixtureRole(repo)
 
 	id := fixture.Role("Guest", time.Now(), time.Now())
@@ -121,7 +121,7 @@ func TestRoleRepositoryWhenDeleteByIds(t *testing.T) {
 		db.MustExec("DELETE FROM role")
 	})
 
-	repo := role.NewRoleRepository(db)
+	repo := role.NewRepository(db)
 	fixture := NewFixtureRole(repo)
 
 	id1 := fixture.Role("Guest1", time.Now(), time.Now())
