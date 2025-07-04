@@ -31,16 +31,16 @@ func (svc *Service) FindById(id int64) (Response, error) {
 	if err != nil {
 		return Response{}, fmt.Errorf("Error finding role with id %d: %w", id, err)
 	}
-	return entity.toResponse(), nil
+	return entity.ToResponse(), nil
 }
 
 func (svc *Service) Add(role Entity) (Response, error) {
 	if role == (Entity{}) || role.Name == "" {
-		return Response{Name: role.Name}, fmt.Errorf("Invalid field, please check the employee")
+		return Response{Name: role.Name}, fmt.Errorf("Invalid field, please check the role")
 	}
 	var rsl, err = svc.repo.Add(role)
 	if err != nil {
-		return Response{}, fmt.Errorf("Error adding employee %+v: %w", role, err)
+		return Response{}, fmt.Errorf("Error adding role %+v: %w", role, err)
 	}
 	return Response{
 		Id:        rsl,
@@ -60,7 +60,7 @@ func (svc *Service) FindByIds(ids []int64) ([]Response, error) {
 
 	responses := make([]Response, 0, len(rsl))
 	for _, e := range rsl {
-		responses = append(responses, e.toResponse())
+		responses = append(responses, e.ToResponse())
 	}
 	return responses, nil
 }
