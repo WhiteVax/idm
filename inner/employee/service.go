@@ -53,13 +53,22 @@ func (svc *Service) Add(employee Entity) (response Response, err error) {
 	}
 
 	defer func() {
-		if p := recover(); p != nil {
-			_ = tx.Rollback()
-			panic(p)
+		if r := recover(); r != nil {
+			err = fmt.Errorf("Сreating employee panic: %v", r)
+			errTx := tx.Rollback()
+			if errTx != nil {
+				err = fmt.Errorf("Сreating employee: rolling back transaction errors: %w, %w", err, errTx)
+			}
 		} else if err != nil {
-			_ = tx.Rollback()
+			errTx := tx.Rollback()
+			if errTx != nil {
+				err = fmt.Errorf("Сreating employee: rolling back transaction errors: %w, %w", err, errTx)
+			}
 		} else {
-			err = tx.Commit()
+			errTx := tx.Commit()
+			if errTx != nil {
+				err = fmt.Errorf("Сreating employee: commiting transaction error: %w", errTx)
+			}
 		}
 	}()
 
