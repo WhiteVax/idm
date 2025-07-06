@@ -99,14 +99,14 @@ func TestFindById(t *testing.T) {
 
 func TestServiceAdd(t *testing.T) {
 	a := assert.New(t)
-	repo := new(MockEmployeeRepo)
-	svc := NewService(repo)
 
 	db, mockTr, err := sqlmock.New()
 	a.Nil(err)
 	defer db.Close()
 
 	t.Run("Should add employee", func(t *testing.T) {
+		repo := new(MockEmployeeRepo)
+		svc := NewService(repo)
 		sqlxDB := sqlx.NewDb(db, "sqlmock_db")
 		mockTr.ExpectBegin()
 		mockTr.ExpectCommit()
@@ -122,44 +122,48 @@ func TestServiceAdd(t *testing.T) {
 		}
 		repo.On("BeginTr").Return(tx, nil)
 		repo.On("FindByNameAndSurname", tx, employee.Name, employee.Surname).Return(false, nil)
-		repo.On("Add", tx, employee).Return(int64(1), nil)
+		repo.On("Add", tx, mock.MatchedBy(func(e Entity) bool {
+			return e.Name == "John" && e.Surname == "Doe" && e.Age == 30
+		})).Return(int64(1), nil)
 		rsl, err := svc.Add(employee)
 		a.Nil(err)
 		a.Equal(employee.Name, rsl.Name)
 		a.Equal(employee.Surname, rsl.Surname)
-		a.Equal(employee.Age, rsl.Age)
+		a.Equal(employee.CreatedAt, rsl.CreatedAt)
 		a.NoError(mockTr.ExpectationsWereMet())
 		repo.AssertExpectations(t)
 	})
 
 	t.Run("Should fail when add duplicated", func(t *testing.T) {
+		repo := new(MockEmployeeRepo)
+		svc := NewService(repo)
 		sqlxDB := sqlx.NewDb(db, "sqlmock_db")
 		mockTr.ExpectBegin()
 		mockTr.ExpectRollback()
 		tx, err := sqlxDB.Beginx()
 		a.Nil(err)
 
-		employee := Entity{
+		duplicated := Entity{
 			Name:      "John",
-			Surname:   "Doe",
-			Age:       30,
+			Surname:   "Sina",
+			Age:       40,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
-
 		repo.On("BeginTr").Return(tx, nil)
-		repo.On("FindByNameAndSurname", tx, employee.Name, employee.Surname).Return(true, nil)
-
-		rsl, err := svc.Add(employee)
+		repo.On("FindByNameAndSurname", tx, duplicated.Name, duplicated.Surname).Return(true, nil)
+		rsl, err := svc.Add(duplicated)
 		a.Error(err)
-		expectedError := fmt.Errorf("Employee with name '%s' and surname '%s' already exists", employee.Name, employee.Surname)
-		a.Contains(err.Error(), expectedError.Error())
+		expectedError := fmt.Sprintf("Employee with name '%s' and surname '%s' already exists", duplicated.Name, duplicated.Surname)
+		a.Contains(err.Error(), expectedError)
 		a.Equal(Response{}, rsl)
 		a.NoError(mockTr.ExpectationsWereMet())
 		repo.AssertExpectations(t)
 	})
 
 	t.Run("Should fail on empty entity", func(t *testing.T) {
+		repo := new(MockEmployeeRepo)
+		svc := NewService(repo)
 		rsl, err := svc.Add(Entity{})
 		a.Error(err)
 		a.Contains(err.Error(), "Entity is empty")
@@ -167,6 +171,8 @@ func TestServiceAdd(t *testing.T) {
 	})
 
 	t.Run("Should fail on invalid fields", func(t *testing.T) {
+		repo := new(MockEmployeeRepo)
+		svc := NewService(repo)
 		badEmployee := Entity{
 			Name:    "",
 			Surname: "Doe",
@@ -179,6 +185,8 @@ func TestServiceAdd(t *testing.T) {
 	})
 
 	t.Run("Should fail on transaction begin error", func(t *testing.T) {
+		repo := new(MockEmployeeRepo)
+		svc := NewService(repo)
 		employee := Entity{
 			Name:      "John",
 			Surname:   "Doe",
