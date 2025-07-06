@@ -97,7 +97,7 @@ func TestFindById(t *testing.T) {
 	})
 }
 
-func TestService_Add(t *testing.T) {
+func TestServiceAdd(t *testing.T) {
 	a := assert.New(t)
 	repo := new(MockEmployeeRepo)
 	svc := NewService(repo)
@@ -127,7 +127,7 @@ func TestService_Add(t *testing.T) {
 		a.Nil(err)
 		a.Equal(employee.Name, rsl.Name)
 		a.Equal(employee.Surname, rsl.Surname)
-		a.Equal(employee.CreatedAt, rsl.CreatedAt)
+		a.Equal(employee.Age, rsl.Age)
 		a.NoError(mockTr.ExpectationsWereMet())
 		repo.AssertExpectations(t)
 	})
