@@ -42,6 +42,67 @@ func TestRepositoryEmployee(t *testing.T) {
 	})
 }
 
+func TestEmployeeRepositoryWhenAdd(t *testing.T) {
+	a := assert.New(t)
+
+	db := database.ConnectDb()
+
+	var clearDatabase = func() {
+		db.MustExec("DELETE FROM employee")
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			clearDatabase()
+		} else {
+			clearDatabase()
+		}
+	}()
+
+	repo := employee.NewEmployeeRepository(db)
+	t.Run("Add employee in transaction", func(t *testing.T) {
+		tx, err := repo.BeginTr()
+		a.Nil(err)
+		entity := employee.Entity{
+			Name:      "Alice",
+			Surname:   "Wonder",
+			Age:       30,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+
+		id, err := repo.Add(tx, entity)
+		a.Nil(err)
+		a.True(id > 0)
+		err = tx.Commit()
+		a.Nil(err)
+
+		employees, err := repo.FindAll()
+		a.Nil(err)
+		a.Equal(1, len(employees))
+		a.Equal(entity.Name, employees[0].Name)
+		a.Equal(entity.Surname, employees[0].Surname)
+	})
+}
+
+func TestEmployeeRepositoryWhenFindByNameAndSurnameThenTrue(t *testing.T) {
+	a := assert.New(t)
+	db := database.ConnectDb()
+	t.Cleanup(func() {
+		db.MustExec("DELETE FROM employee")
+	})
+	repo := employee.NewEmployeeRepository(db)
+	fixture := NewFixtureEmployee(repo)
+	expected := employee.Entity{Name: "John", Surname: "Smith", Age: 60, CreatedAt: time.Now()}
+	fixture.Employee(expected.Name, expected.Surname, expected.Age, expected.CreatedAt, expected.UpdatedAt)
+	t.Run("Find employee by name and surname", func(t *testing.T) {
+		tr, err := repo.BeginTr()
+		a.Nil(err)
+		rsl, err := repo.FindByNameAndSurname(tr, expected.Name, expected.Surname)
+		a.Nil(err)
+		a.True(rsl)
+	})
+}
+
 func TestEmployeeRepositoryWhenFindAll(t *testing.T) {
 	a := assert.New(t)
 

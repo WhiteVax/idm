@@ -2,6 +2,7 @@ package employee
 
 import (
 	"fmt"
+	"github.com/jmoiron/sqlx"
 )
 
 type Service struct {
@@ -9,12 +10,14 @@ type Service struct {
 }
 
 type Repo interface {
-	Add(entity Entity) (int64, error)
+	Add(tx *sqlx.Tx, employee Entity) (id int64, err error)
 	FindById(id int64) (Entity, error)
 	FindAll() ([]Entity, error)
 	FindBySliceIds(ids []int64) ([]Entity, error)
 	DeleteById(id int64) (bool, error)
 	DeleteBySliceIds(ids []int64) ([]int64, error)
+	BeginTr() (*sqlx.Tx, error)
+	FindByNameAndSurname(tx *sqlx.Tx, name, surname string) (isExists bool, err error)
 }
 
 func NewService(
@@ -36,24 +39,51 @@ func (svc *Service) FindById(id int64) (Response, error) {
 	return entity.ToResponse(), nil
 }
 
-func (svc *Service) Add(employee Entity) (Response, error) {
+func (svc *Service) Add(employee Entity) (response Response, err error) {
 	if employee == (Entity{}) {
 		return Response{}, fmt.Errorf("Entity is empty, please check the employee")
 	}
 	if employee.Name == "" || employee.Surname == "" || employee.Age <= 16 {
 		return Response{}, fmt.Errorf("Invalid field, please check the employee %+v", employee)
 	}
-	var rsl, err = svc.repo.Add(employee)
-	if err != nil {
-		return Response{}, fmt.Errorf("Error adding employee %+v: %w", employee, err)
+
+	tx, err := svc.repo.BeginTr()
+	if err != nil || tx == nil {
+		return Response{}, fmt.Errorf("Failed to begin transaction: %w", err)
 	}
+
+	defer func() {
+		if p := recover(); p != nil {
+			_ = tx.Rollback()
+			panic(p)
+		} else if err != nil {
+			_ = tx.Rollback()
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
+	exists, err := svc.repo.FindByNameAndSurname(tx, employee.Name, employee.Surname)
+	if err != nil {
+		return Response{}, fmt.Errorf("Failed to check existence: %w", err)
+	}
+	if exists {
+		return Response{}, fmt.Errorf("Employee with name '%s' and surname '%s' already exists", employee.Name, employee.Surname)
+	}
+
+	id, err := svc.repo.Add(tx, employee)
+	if err != nil {
+		return Response{}, fmt.Errorf("Failed to add employee: %w", err)
+	}
+
 	return Response{
-		Id:        rsl,
+		Id:        id,
 		Name:      employee.Name,
 		Surname:   employee.Surname,
 		Age:       employee.Age,
 		CreatedAt: employee.CreatedAt,
-		UpdatedAt: employee.UpdatedAt}, nil
+		UpdatedAt: employee.UpdatedAt,
+	}, nil
 }
 
 func (svc *Service) FindByIds(ids []int64) ([]Response, error) {
