@@ -16,16 +16,28 @@ func NewEmployeeRepository(database *sqlx.DB) *Repository {
 	return &Repository{db: database}
 }
 
-func (r *Repository) Add(employee Entity) (id int64, err error) {
+func (r *Repository) BeginTr() (*sqlx.Tx, error) {
+	return r.db.Beginx()
+}
+
+func (r *Repository) Add(tx *sqlx.Tx, employee Entity) (id int64, err error) {
 	query := `INSERT INTO employee(name, surname, age, created_at, updated_at) 
 			  VALUES (:name, :surname, :age, :created_at, :updated_at) 
 			  RETURNING id`
-	rows, err := r.db.NamedQuery(query, &employee)
+	rows, err := tx.NamedQuery(query, &employee)
 
 	if err == nil && rows.Next() && rows.Scan(&id) == nil {
 		return id, nil
 	}
 	return -1, err
+}
+
+func (r *Repository) FindByNameAndSurname(tx *sqlx.Tx, name, surname string) (isExists bool, err error) {
+	err = tx.Get(
+		&isExists,
+		"select exists(select from employee where name = $1 and surname = $2)",
+		name, surname)
+	return isExists, err
 }
 
 func (r *Repository) FindById(id int64) (employee Entity, err error) {

@@ -2,6 +2,9 @@ package employee
 
 import (
 	"errors"
+	"fmt"
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"testing"
@@ -17,8 +20,19 @@ type StubRepoEmployee struct {
 	Err       error
 }
 
-func (m *MockEmployeeRepo) Add(entity Entity) (int64, error) {
-	args := m.Called(entity)
+func (m *MockEmployeeRepo) BeginTr() (*sqlx.Tx, error) {
+	args := m.Called()
+	tx, _ := args.Get(0).(*sqlx.Tx)
+	return tx, args.Error(1)
+}
+
+func (m *MockEmployeeRepo) FindByNameAndSurname(tx *sqlx.Tx, name, surname string) (bool, error) {
+	args := m.Called(tx, name, surname)
+	return args.Bool(0), args.Error(1)
+}
+
+func (m *MockEmployeeRepo) Add(tx *sqlx.Tx, emp Entity) (int64, error) {
+	args := m.Called(tx, emp)
 	return args.Get(0).(int64), args.Error(1)
 }
 
@@ -83,58 +97,109 @@ func TestFindById(t *testing.T) {
 	})
 }
 
-func TestAdd(t *testing.T) {
+func TestServiceAdd(t *testing.T) {
 	a := assert.New(t)
-	repo := new(MockEmployeeRepo)
-	svc := NewService(repo)
+
+	db, mockTr, err := sqlmock.New()
+	a.Nil(err)
+	defer db.Close()
 
 	t.Run("Should add employee", func(t *testing.T) {
-		entity := Entity{
-			Id:        1,
+		repo := new(MockEmployeeRepo)
+		svc := NewService(repo)
+		sqlxDB := sqlx.NewDb(db, "sqlmock_db")
+		mockTr.ExpectBegin()
+		mockTr.ExpectCommit()
+		tx, err := sqlxDB.Beginx()
+		a.Nil(err)
+
+		employee := Entity{
 			Name:      "John",
 			Surname:   "Doe",
 			Age:       30,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
-
-		expectedId := int64(1)
-		entityExpected := Response{
-			Id:        1,
-			Name:      entity.Name,
-			Surname:   entity.Surname,
-			Age:       entity.Age,
-			CreatedAt: entity.CreatedAt,
-			UpdatedAt: entity.UpdatedAt,
-		}
-
-		repo.On("Add", entity).Return(expectedId, nil)
-		got, err := svc.Add(entity)
-
+		repo.On("BeginTr").Return(tx, nil)
+		repo.On("FindByNameAndSurname", tx, employee.Name, employee.Surname).Return(false, nil)
+		repo.On("Add", tx, mock.MatchedBy(func(e Entity) bool {
+			return e.Name == "John" && e.Surname == "Doe" && e.Age == 30
+		})).Return(int64(1), nil)
+		rsl, err := svc.Add(employee)
 		a.Nil(err)
-		a.Equal(entityExpected, got)
+		a.Equal(employee.Name, rsl.Name)
+		a.Equal(employee.Surname, rsl.Surname)
+		a.Equal(employee.CreatedAt, rsl.CreatedAt)
+		a.NoError(mockTr.ExpectationsWereMet())
+		repo.AssertExpectations(t)
 	})
 
-	t.Run("Should return error if employee empty", func(t *testing.T) {
-		entity := Entity{}
-		got, err := svc.Add(entity)
-		a.Equal(Response{}, got)
-		a.Error(err)
-		a.Contains(err.Error(), "Entity is empty, please check the employee")
-	})
+	t.Run("Should fail when add duplicated", func(t *testing.T) {
+		repo := new(MockEmployeeRepo)
+		svc := NewService(repo)
+		sqlxDB := sqlx.NewDb(db, "sqlmock_db")
+		mockTr.ExpectBegin()
+		mockTr.ExpectRollback()
+		tx, err := sqlxDB.Beginx()
+		a.Nil(err)
 
-	t.Run("Should return error if any employee field is empty", func(t *testing.T) {
-		entity := Entity{
-			Id:        0,
+		duplicated := Entity{
 			Name:      "John",
-			Surname:   "",
+			Surname:   "Sina",
+			Age:       40,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		repo.On("BeginTr").Return(tx, nil)
+		repo.On("FindByNameAndSurname", tx, duplicated.Name, duplicated.Surname).Return(true, nil)
+		rsl, err := svc.Add(duplicated)
+		a.Error(err)
+		expectedError := fmt.Sprintf("Employee with name '%s' and surname '%s' already exists", duplicated.Name, duplicated.Surname)
+		a.Contains(err.Error(), expectedError)
+		a.Equal(Response{}, rsl)
+		a.NoError(mockTr.ExpectationsWereMet())
+		repo.AssertExpectations(t)
+	})
+
+	t.Run("Should fail on empty entity", func(t *testing.T) {
+		repo := new(MockEmployeeRepo)
+		svc := NewService(repo)
+		rsl, err := svc.Add(Entity{})
+		a.Error(err)
+		a.Contains(err.Error(), "Entity is empty")
+		a.Equal(Response{}, rsl)
+	})
+
+	t.Run("Should fail on invalid fields", func(t *testing.T) {
+		repo := new(MockEmployeeRepo)
+		svc := NewService(repo)
+		badEmployee := Entity{
+			Name:    "",
+			Surname: "Doe",
+			Age:     15,
+		}
+		rsl, err := svc.Add(badEmployee)
+		a.Error(err)
+		a.Contains(err.Error(), "Invalid field")
+		a.Equal(Response{}, rsl)
+	})
+
+	t.Run("Should fail on transaction begin error", func(t *testing.T) {
+		repo := new(MockEmployeeRepo)
+		svc := NewService(repo)
+		employee := Entity{
+			Name:      "John",
+			Surname:   "Doe",
 			Age:       30,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
-		got, err := svc.Add(entity)
-		a.Equal(Response{}, got)
+		repo.On("BeginTr").Return(nil, fmt.Errorf("tx error"))
+
+		rsl, err := svc.Add(employee)
 		a.Error(err)
+		a.Contains(err.Error(), "Failed to begin transaction")
+		a.Equal(Response{}, rsl)
 	})
 }
 

@@ -45,7 +45,21 @@ func (f *FixtureEmployee) Employee(name string, surname string, age int8,
 		CreatedAt: createdAt,
 		UpdatedAt: updatedAt,
 	}
-	var newId, err = f.employee.Add(entity)
+
+	tx, err := f.employee.BeginTr()
+	if err != nil {
+		panic(fmt.Errorf("Failed to begin transaction: %w", err))
+	}
+
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		} else {
+			_ = tx.Commit()
+		}
+	}()
+
+	newId, err := f.employee.Add(tx, entity)
 	if err != nil {
 		panic(err)
 	}
