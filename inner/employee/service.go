@@ -120,7 +120,7 @@ func (svc *Service) CreateEmployee(request CreateRequest) (int64, error) {
 			err = fmt.Errorf("Сreating employee panic: %v", r)
 			err := tx.Rollback()
 			if err != nil {
-				_ = fmt.Errorf("Сreating employee: rolling back transaction errors: %w")
+				_ = fmt.Errorf("Creating employee: rolling back transaction errors: %w", err)
 			}
 		} else if err != nil {
 			errTx := tx.Rollback()
