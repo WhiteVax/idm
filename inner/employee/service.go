@@ -3,10 +3,12 @@ package employee
 import (
 	"fmt"
 	"github.com/jmoiron/sqlx"
+	"idm/inner/common"
 )
 
 type Service struct {
-	repo Repo
+	repo      Repo
+	validator Validator
 }
 
 type Repo interface {
@@ -20,11 +22,17 @@ type Repo interface {
 	FindByNameAndSurname(tx *sqlx.Tx, name, surname string) (isExists bool, err error)
 }
 
+type Validator interface {
+	Validate(request any) error
+}
+
 func NewService(
 	repo Repo,
+	validator Validator,
 ) *Service {
 	return &Service{
-		repo: repo,
+		repo:      repo,
+		validator: validator,
 	}
 }
 
@@ -93,6 +101,56 @@ func (svc *Service) Add(employee Entity) (response Response, err error) {
 		CreatedAt: employee.CreatedAt,
 		UpdatedAt: employee.UpdatedAt,
 	}, nil
+}
+
+func (svc *Service) CreateEmployee(request CreateRequest) (int64, error) {
+
+	var err = svc.validator.Validate(request)
+	if err != nil {
+		return 0, common.RequestValidationError{Message: err.Error()}
+	}
+
+	tx, err := svc.repo.BeginTr()
+	if err != nil || tx == nil {
+		return 0, fmt.Errorf("Failed to begin transaction: %w", err)
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("Сreating employee panic: %v", r)
+			err := tx.Rollback()
+			if err != nil {
+				_ = fmt.Errorf("Сreating employee: rolling back transaction errors: %w")
+			}
+		} else if err != nil {
+			errTx := tx.Rollback()
+			if errTx != nil {
+				_ = fmt.Errorf("Сreating employee: rolling back transaction errors: %w, %w", err, errTx)
+			}
+		} else {
+			errTx := tx.Commit()
+			if errTx != nil {
+				_ = fmt.Errorf("Сreating employee: commiting transaction error: %w", errTx)
+			}
+		}
+	}()
+	if err != nil {
+		return 0, fmt.Errorf("Error create employee: error creating transaction: %w", err)
+	}
+
+	isExist, err := svc.repo.FindByNameAndSurname(tx, request.Name, request.Surname)
+	if err != nil {
+		return 0, fmt.Errorf("Error finding employee by name and suename : %s, %s, %w", request.Name, request.Surname, err)
+	}
+	if isExist {
+		return 0, common.AlreadyExistsError{fmt.Sprintf("Employee with name %s and surname %s already exists", request.Name, request.Surname)}
+	}
+
+	newEmployeeId, err := svc.repo.Add(tx, request.ToEntity())
+	if err != nil {
+		err = fmt.Errorf("Error creating employee with name and sruanem: %s  %s %v", request.Name, request.Surname, err)
+	}
+	return newEmployeeId, err
 }
 
 func (svc *Service) FindByIds(ids []int64) ([]Response, error) {
