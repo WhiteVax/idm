@@ -29,7 +29,6 @@ func (c *Controller) RegisterRoutes() {
 	c.server.GroupApiV1.Post("/employees/add", c.AddEmployee)
 	c.server.GroupApiV1.Post("/employees/:id", c.FindById)
 	c.server.GroupApiV1.Post("/employees/ids", c.FindByIds)
-	c.server.GroupApiV1.Post("/employees/ids", c.FindByIds)
 	c.server.GroupApiV1.Delete("/employees/:id", c.DeleteById)
 	c.server.GroupApiV1.Delete("/employees/:ids", c.DeleteByIds)
 	c.server.GroupApiV1.Get("/employees", c.FindAll)
@@ -38,7 +37,6 @@ func (c *Controller) RegisterRoutes() {
 func (c *Controller) CreateEmployee(ctx *fiber.Ctx) error {
 	var request CreateRequest
 	if err := ctx.BodyParser(&request); err != nil {
-		_ = common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
 		return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
 	}
 	var newEmployeeId, err = c.employeeService.CreateEmployee(request)
