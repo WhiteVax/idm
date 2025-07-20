@@ -1,6 +1,7 @@
 package employee
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/gofiber/fiber/v2"
 	"idm/inner/common"
@@ -27,10 +28,10 @@ func (c *Controller) RegisterRoutes() {
 	// полный маршрут получится "/api/v1/employees"
 	c.server.GroupApiV1.Post("/employees", c.CreateEmployee)
 	c.server.GroupApiV1.Post("/employees/add", c.AddEmployee)
-	c.server.GroupApiV1.Post("/employees/:id", c.FindById)
 	c.server.GroupApiV1.Post("/employees/ids", c.FindByIds)
+	c.server.GroupApiV1.Post("/employees/:id", c.FindById)
+	c.server.GroupApiV1.Delete("/employees/ids", c.DeleteByIds)
 	c.server.GroupApiV1.Delete("/employees/:id", c.DeleteById)
-	c.server.GroupApiV1.Delete("/employees/:ids", c.DeleteByIds)
 	c.server.GroupApiV1.Get("/employees", c.FindAll)
 }
 
@@ -43,11 +44,10 @@ func (c *Controller) CreateEmployee(ctx *fiber.Ctx) error {
 	if err != nil {
 		switch {
 		case errors.As(err, &common.RequestValidationError{}) || errors.As(err, &common.AlreadyExistsError{}):
-			_ = common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
+			return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
 		default:
-			_ = common.ErrResponse(ctx, fiber.StatusInternalServerError, err.Error())
+			return common.ErrResponse(ctx, fiber.StatusInternalServerError, err.Error())
 		}
-		return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
 	}
 	if err = common.OkResponse(ctx, newEmployeeId); err != nil {
 		_ = common.ErrResponse(ctx, fiber.StatusInternalServerError, "Error returning created employee id")
@@ -65,7 +65,7 @@ func (c *Controller) AddEmployee(ctx *fiber.Ctx) error {
 	}
 	var newEmployeeId, err = c.employeeService.Add(entity)
 	if err != nil {
-		return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
+		return common.ErrResponse(ctx, fiber.StatusInternalServerError, err.Error())
 	}
 	return common.OkResponse(ctx, newEmployeeId)
 }
@@ -109,8 +109,9 @@ func (c *Controller) DeleteById(ctx *fiber.Ctx) error {
 }
 
 func (c *Controller) DeleteByIds(ctx *fiber.Ctx) error {
+	bodyBytes := ctx.Body()
 	var ids []int64
-	if err := ctx.BodyParser(&ids); err != nil {
+	if err := json.Unmarshal(bodyBytes, &ids); err != nil {
 		return common.ErrResponse(ctx, fiber.StatusBadRequest, "Invalid request body")
 	}
 	rsl, err := c.employeeService.DeleteByIds(ids)
