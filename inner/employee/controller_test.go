@@ -191,7 +191,7 @@ func TestAddEmployee(t *testing.T) {
 		svc := new(MockService)
 		controller := Controller{server: server, employeeService: svc}
 		controller.RegisterRoutes()
-		body := strings.NewReader(fmt.Sprintf(""))
+		body := strings.NewReader("")
 		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees/add", body)
 		req.Header.Set("Content-Type", "application/json")
 		resp, err := server.App.Test(req)
