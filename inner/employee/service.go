@@ -125,12 +125,12 @@ func (svc *Service) CreateEmployee(request CreateRequest) (int64, error) {
 		} else if err != nil {
 			errTx := tx.Rollback()
 			if errTx != nil {
-				_ = fmt.Errorf("Сreating employee: rolling back transaction errors: %w, %w", err, errTx)
+				err = fmt.Errorf("Сreating employee: rolling back transaction errors: %w, %w", err, errTx)
 			}
 		} else {
 			errTx := tx.Commit()
 			if errTx != nil {
-				_ = fmt.Errorf("Сreating employee: commiting transaction error: %w", errTx)
+				err = fmt.Errorf("Сreating employee: commiting transaction error: %w", errTx)
 			}
 		}
 	}()
