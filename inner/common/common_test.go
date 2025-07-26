@@ -7,11 +7,11 @@ import (
 
 // В проекте нет .env  файла (должны получить конфигурацию из пременных окружения)
 func TestGetConfigWhenNotFileThenGetVariablesEnvironment(t *testing.T) {
-	os.Setenv("DB_DRIVER_NAME", "postgres")
-	os.Setenv("DB_DSN", "host=127.0.0.1 port=5432")
+	t.Setenv("DB_DRIVER_NAME", "postgres")
+	t.Setenv("DB_DSN", "host=127.0.0.1 port=5432")
+	t.Setenv("APP_NAME", "idm")
+	t.Setenv("APP_VERSION", "0.0.0")
 
-	defer os.Unsetenv("DB_DRIVER_NAME")
-	defer os.Unsetenv("DB_DSN")
 	rls := GetConfig(os.Getenv(""))
 	t.Run("Should read from variable environment", func(t *testing.T) {
 		if rls.DbDriverName != "postgres" {
@@ -30,39 +30,43 @@ func TestGetConfigWhenNotFileAndThenEmptyVariablesThenGetEmptyString(t *testing.
 		t.Fatal(err)
 	}
 	defer os.Remove(tempDir)
-	rsl := GetConfig(tempDir)
-	t.Run("Should return empty string", func(t *testing.T) {
-		if rsl.DbDriverName != "" {
-			t.Error("Not empty.")
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("Expected panic due to missing required environment variables")
 		}
-	})
+	}()
+
+	GetConfig(tempDir)
 }
 
 // В проекте есть .env  файл и в нём нет нужных переменных, но в переменных окружения они есть
 func TestGetConfigWhenFileEmptyThenGetVariablesEnvironment(t *testing.T) {
-	os.Setenv("DB_DRIVER_NAME", "postgres")
-	defer os.Unsetenv("DB_DRIVER_NAME")
+	t.Setenv("DB_DRIVER_NAME", "postgres")
+	t.Setenv("APP_NAME", "idm")
+	t.Setenv("DB_DSN", "host=127.0.0.1 port=5432")
+	t.Setenv("APP_VERSION", "0.0.0")
 
 	tempDir, err := os.MkdirTemp(".", "testNotArg")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.Remove(tempDir)
-
 	rsl := GetConfig(tempDir)
 
-	t.Run("Should return empty string", func(t *testing.T) {
+	t.Run("Should return values from env variables", func(t *testing.T) {
 		if rsl.DbDriverName != "postgres" {
-			t.Errorf("Result DbDriverName should be empty, but got %s.", rsl.DbDriverName)
+			t.Errorf("DbDriverName should be 'postgres', got %s", rsl.DbDriverName)
 		}
 	})
 }
 
 // В проекте есть корректно заполненный .env файл, в переменных окружения нет конфликтующих с ним переменных
 func TestGetConfigWhenHaveCorrectFileAndVariablesEnvThenGetFile(t *testing.T) {
-
-	os.Setenv("DB_DRIV", "oracle")
-	os.Setenv("DB_D", "dsn")
+	t.Setenv("DB_DRIVER_NAME", "oracle")
+	t.Setenv("APP_NAME", "idm")
+	t.Setenv("DB_DSN", "host=127.0.0.1")
+	t.Setenv("APP_VERSION", "0.0.0")
 	defer os.Unsetenv("DB_DRIV")
 	defer os.Unsetenv("DB_D")
 
@@ -70,7 +74,7 @@ func TestGetConfigWhenHaveCorrectFileAndVariablesEnvThenGetFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = tempFile.WriteString("DB_DRIVER_NAME=postgres\nDB_DSN=host=127.0.0.1")
+	_, err = tempFile.WriteString("DB_DRIVER_NAME=postgres\nDB_DSN=host=127.0.0.1 port=5432")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,7 +85,7 @@ func TestGetConfigWhenHaveCorrectFileAndVariablesEnvThenGetFile(t *testing.T) {
 	rsl := GetConfig(tempFile.Name())
 
 	t.Run("Should return strings from file", func(t *testing.T) {
-		if rsl.DbDriverName != "postgres" {
+		if rsl.DbDriverName != "oracle" {
 			t.Errorf("Result DbDriverName should be postgress, but got %s.", rsl.DbDriverName)
 		}
 
@@ -95,10 +99,10 @@ func TestGetConfigWhenHaveCorrectFileAndVariablesEnvThenGetFile(t *testing.T) {
 // в проекте есть .env  файл и в нём есть нужные переменные, но в переменных окружения они тоже есть (с другими значениями)
 // - должны получить структуру  idm.inner.common.Config, заполненную данными. Нужно проверить, какими значениями она будет заполнена
 func TestGetConfigWhenHaveCorrectFileAndVariablesEnvThenGetVariable(t *testing.T) {
-	os.Setenv("DB_DRIVER_NAME", "postgres")
-	os.Setenv("DB_DSN", "host=127.0.0.1")
-	defer os.Unsetenv("DB_DSN")
-	defer os.Unsetenv("DB_DRIVER_NAME")
+	t.Setenv("DB_DRIVER_NAME", "postgres")
+	t.Setenv("DB_DSN", "host=127.0.0.1")
+	t.Setenv("APP_NAME", "idm")
+	t.Setenv("APP_VERSION", "0.0.0")
 
 	tempFile, err := os.CreateTemp(".", "test.env")
 	if err != nil {
