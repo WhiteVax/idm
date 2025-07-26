@@ -65,6 +65,7 @@ func TestGetHealth(t *testing.T) {
 			AppVersion: "1.0.0",
 		}
 		mockDb, _, err := sqlmock.New()
+		a.Nil(err)
 		ctrl := NewController(server, cfg, mockDb)
 		ctrl.RegisterRoutes()
 		req := httptest.NewRequest(http.MethodGet, "/internal/health", nil)
@@ -84,6 +85,7 @@ func TestGetHealth(t *testing.T) {
 			AppVersion: "1.0.0",
 		}
 		mockDb, _, err := sqlmock.New()
+		a.Nil(err)
 		mockDb.Close()
 		ctrl := NewController(server, cfg, mockDb)
 		ctrl.RegisterRoutes()
