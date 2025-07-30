@@ -10,7 +10,7 @@ import (
 )
 
 type Controller struct {
-	server          *web.Server
+	Server          *web.Server
 	employeeService Svc
 }
 
@@ -24,15 +24,22 @@ type Svc interface {
 	FindAll() (employees []Response, err error)
 }
 
+func NewController(server *web.Server, employeeService Svc) *Controller {
+	return &Controller{
+		Server:          server,
+		employeeService: employeeService,
+	}
+}
+
 func (c *Controller) RegisterRoutes() {
 	// полный маршрут получится "/api/v1/employees"
-	c.server.GroupApiV1.Post("/employees", c.CreateEmployee)
-	c.server.GroupApiV1.Post("/employees/add", c.AddEmployee)
-	c.server.GroupApiV1.Post("/employees/ids", c.FindByIds)
-	c.server.GroupApiV1.Post("/employees/:id", c.FindById)
-	c.server.GroupApiV1.Delete("/employees/ids", c.DeleteByIds)
-	c.server.GroupApiV1.Delete("/employees/:id", c.DeleteById)
-	c.server.GroupApiV1.Get("/employees", c.FindAll)
+	c.Server.GroupApiV1.Post("/employees", c.CreateEmployee)
+	c.Server.GroupApiV1.Post("/employees/add", c.AddEmployee)
+	c.Server.GroupApiV1.Post("/employees/ids", c.FindByIds)
+	c.Server.GroupApiV1.Post("/employees/:id", c.FindById)
+	c.Server.GroupApiV1.Delete("/employees/ids", c.DeleteByIds)
+	c.Server.GroupApiV1.Delete("/employees/:id", c.DeleteById)
+	c.Server.GroupApiV1.Get("/employees", c.FindAll)
 }
 
 func (c *Controller) CreateEmployee(ctx *fiber.Ctx) error {

@@ -22,12 +22,19 @@ type Svc interface {
 	FindAll() (roles []Entity, err error)
 }
 
+func NewController(server *web.Server, roleService Svc) *Controller {
+	return &Controller{
+		server:  server,
+		service: roleService,
+	}
+}
+
 func (c *Controller) RegisterRouters() {
 	c.server.GroupApiV1.Post("/roles/add", c.AddRoles)
 	c.server.GroupApiV1.Post("/roles/ids", c.FindByIds)
 	c.server.GroupApiV1.Post("/roles/:id", c.FindById)
 	c.server.GroupApiV1.Delete("/roles/ids", c.DeleteByIds)
-	c.server.GroupApiV1.Post("/roles/:ids", c.DeleteById)
+	c.server.GroupApiV1.Delete("/roles/:id", c.DeleteById)
 	c.server.GroupApiV1.Get("/roles", c.FindAll)
 }
 

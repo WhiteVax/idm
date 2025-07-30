@@ -1,8 +1,8 @@
 package info
 
 import (
-	"database/sql"
 	"github.com/gofiber/fiber/v2"
+	"github.com/jmoiron/sqlx"
 	"idm/inner/common"
 	"idm/inner/web"
 )
@@ -10,10 +10,10 @@ import (
 type Controller struct {
 	server *web.Server
 	cfg    common.Config
-	db     *sql.DB
+	db     *sqlx.DB
 }
 
-func NewController(server *web.Server, cfg common.Config, db *sql.DB) *Controller {
+func NewController(server *web.Server, cfg common.Config, db *sqlx.DB) *Controller {
 	return &Controller{
 		server: server,
 		cfg:    cfg,

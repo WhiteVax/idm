@@ -3,6 +3,7 @@ package info
 import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/gofiber/fiber/v2"
+	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"idm/inner/common"
@@ -66,7 +67,8 @@ func TestGetHealth(t *testing.T) {
 		}
 		mockDb, _, err := sqlmock.New()
 		a.Nil(err)
-		ctrl := NewController(server, cfg, mockDb)
+		sqlxDB := sqlx.NewDb(mockDb, "sqlmock")
+		ctrl := NewController(server, cfg, sqlxDB)
 		ctrl.RegisterRoutes()
 		req := httptest.NewRequest(http.MethodGet, "/internal/health", nil)
 		resp, err := app.Test(req)
@@ -87,7 +89,8 @@ func TestGetHealth(t *testing.T) {
 		mockDb, _, err := sqlmock.New()
 		a.Nil(err)
 		mockDb.Close()
-		ctrl := NewController(server, cfg, mockDb)
+		sqlxDB := sqlx.NewDb(mockDb, "sqlmock")
+		ctrl := NewController(server, cfg, sqlxDB)
 		ctrl.RegisterRoutes()
 		req := httptest.NewRequest(http.MethodGet, "/internal/health", nil)
 		resp, err := app.Test(req)
