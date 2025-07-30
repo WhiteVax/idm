@@ -16,8 +16,8 @@ func main() {
 	var cfg = common.GetConfig(".env")
 	db := database2.ConnectDbWithCfg(cfg)
 	defer func() {
-		if err := db.Close; err != nil {
-			fmt.Println("Error closing db: %v", err)
+		if err := db.Close(); err != nil {
+			fmt.Printf("Error closing db: %v\n", err)
 		}
 	}()
 	var server = build(db)
