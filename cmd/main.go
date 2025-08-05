@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"idm/inner/common"
@@ -10,6 +11,10 @@ import (
 	"idm/inner/role"
 	"idm/inner/validator"
 	"idm/inner/web"
+	"os/signal"
+	"sync"
+	"syscall"
+	"time"
 )
 
 func main() {
@@ -20,11 +25,34 @@ func main() {
 			fmt.Printf("Error closing db: %v\n", err)
 		}
 	}()
+
 	var server = build(db)
-	var err = server.App.Listen(":8080")
-	if err != nil {
-		panic(fmt.Sprintf("http server error: %s", err))
+	go func() {
+		var err = server.App.Listen(":8080")
+		if err != nil {
+			panic(fmt.Sprintf("http server error: %s", err))
+		}
+	}()
+	var wg = &sync.WaitGroup{}
+	wg.Add(1)
+	go gracefulShutdown(server, wg)
+	wg.Wait()
+	fmt.Println("Graceful shutdown complete.")
+}
+
+func gracefulShutdown(server *web.Server, wg *sync.WaitGroup) {
+	const timeOut = 5 * time.Second
+	defer wg.Done()
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGQUIT)
+	defer stop()
+	<-ctx.Done()
+	fmt.Println("Shutting down gracefully, press Ctrl+C again to force")
+	ctx, cancel := context.WithTimeout(context.Background(), timeOut)
+	defer cancel()
+	if err := server.App.ShutdownWithContext(ctx); err != nil {
+		fmt.Printf("Server forced to shutdown with error: %v\n", err)
 	}
+	fmt.Println("Server exiting")
 }
 
 func build(database *sqlx.DB) *web.Server {
