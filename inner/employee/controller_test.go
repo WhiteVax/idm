@@ -8,6 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"go.uber.org/zap"
 	"idm/inner/common"
 	"idm/inner/web"
 	"io"
@@ -59,11 +60,13 @@ func (svc *MockService) CreateEmployee(request CreateRequest) (int64, error) {
 
 func TestCreateEmployee(t *testing.T) {
 	a := assert.New(t)
-
+	logger := &common.Logger{
+		Logger: zap.NewNop(),
+	}
 	t.Run("Should return created employee id", func(t *testing.T) {
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := Controller{Server: server, employeeService: svc}
+		controller := Controller{Server: server, employeeService: svc, logger: logger}
 		controller.RegisterRoutes()
 		now := time.Now().UTC().Format(time.RFC3339)
 
@@ -95,7 +98,7 @@ func TestCreateEmployee(t *testing.T) {
 	t.Run("Should return 400 on bad JSON", func(t *testing.T) {
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := Controller{Server: server, employeeService: svc}
+		controller := Controller{Server: server, employeeService: svc, logger: logger}
 		controller.RegisterRoutes()
 		body := strings.NewReader(`{invalid json}`)
 		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees", body)
@@ -108,7 +111,7 @@ func TestCreateEmployee(t *testing.T) {
 	t.Run("Should return 400 on AlreadyExistsError", func(t *testing.T) {
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := Controller{Server: server, employeeService: svc}
+		controller := Controller{Server: server, employeeService: svc, logger: logger}
 		controller.RegisterRoutes()
 		now := time.Now().UTC().Format(time.RFC3339)
 		body := strings.NewReader(fmt.Sprintf(`{
@@ -129,7 +132,7 @@ func TestCreateEmployee(t *testing.T) {
 	t.Run("Should return 500 on unknown internal error", func(t *testing.T) {
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := Controller{Server: server, employeeService: svc}
+		controller := Controller{Server: server, employeeService: svc, logger: logger}
 		controller.RegisterRoutes()
 		now := time.Now().UTC().Format(time.RFC3339)
 		body := strings.NewReader(fmt.Sprintf(`{
@@ -150,10 +153,13 @@ func TestCreateEmployee(t *testing.T) {
 
 func TestAddEmployee(t *testing.T) {
 	a := assert.New(t)
+	logger := &common.Logger{
+		Logger: zap.NewNop(),
+	}
 	t.Run("Should add employee and get id with status 200", func(t *testing.T) {
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := Controller{Server: server, employeeService: svc}
+		controller := Controller{Server: server, employeeService: svc, logger: logger}
 		controller.RegisterRoutes()
 		now := time.Now().UTC()
 		entity := Entity{
@@ -189,7 +195,7 @@ func TestAddEmployee(t *testing.T) {
 	t.Run("When fail error 400", func(t *testing.T) {
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := Controller{Server: server, employeeService: svc}
+		controller := Controller{Server: server, employeeService: svc, logger: logger}
 		controller.RegisterRoutes()
 		body := strings.NewReader("")
 		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees/add", body)
@@ -202,7 +208,7 @@ func TestAddEmployee(t *testing.T) {
 	t.Run("Should return 500 on internal error", func(t *testing.T) {
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := Controller{Server: server, employeeService: svc}
+		controller := Controller{Server: server, employeeService: svc, logger: logger}
 		controller.RegisterRoutes()
 
 		now := time.Now().UTC()
@@ -233,10 +239,13 @@ func TestAddEmployee(t *testing.T) {
 
 func TestDeleteByIdEmployee(t *testing.T) {
 	a := assert.New(t)
+	logger := &common.Logger{
+		Logger: zap.NewNop(),
+	}
 	t.Run("When delete status 200", func(t *testing.T) {
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := Controller{Server: server, employeeService: svc}
+		controller := Controller{Server: server, employeeService: svc, logger: logger}
 		controller.RegisterRoutes()
 
 		svc.On("DeleteById", int64(2)).Return(Response{Id: 2}, nil)
@@ -249,7 +258,7 @@ func TestDeleteByIdEmployee(t *testing.T) {
 	t.Run("When fail error 400", func(t *testing.T) {
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := Controller{Server: server, employeeService: svc}
+		controller := Controller{Server: server, employeeService: svc, logger: logger}
 		controller.RegisterRoutes()
 
 		svc.On("DeleteById", int64(0)).Return(Response{Id: 0}, nil)
@@ -262,7 +271,7 @@ func TestDeleteByIdEmployee(t *testing.T) {
 	t.Run("When fail error 500", func(t *testing.T) {
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := Controller{Server: server, employeeService: svc}
+		controller := Controller{Server: server, employeeService: svc, logger: logger}
 		controller.RegisterRoutes()
 
 		svc.On("DeleteById", int64(0)).Return(Response{Id: 0}, errors.New("db failure"))
@@ -275,10 +284,13 @@ func TestDeleteByIdEmployee(t *testing.T) {
 
 func TestDeleteByIdsEmployees(t *testing.T) {
 	a := assert.New(t)
+	logger := &common.Logger{
+		Logger: zap.NewNop(),
+	}
 	t.Run("When delete with status 200", func(t *testing.T) {
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := Controller{Server: server, employeeService: svc}
+		controller := Controller{Server: server, employeeService: svc, logger: logger}
 		controller.RegisterRoutes()
 
 		expected := []Response{{Id: 1}, {Id: 2}}
@@ -300,7 +312,7 @@ func TestDeleteByIdsEmployees(t *testing.T) {
 	t.Run("When fail error 400", func(t *testing.T) {
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := Controller{Server: server, employeeService: svc}
+		controller := Controller{Server: server, employeeService: svc, logger: logger}
 		controller.RegisterRoutes()
 		// пустое тело передаётся, дальше методы сервиса не вызываются
 		req := httptest.NewRequest(fiber.MethodDelete, "/api/v1/employees/ids", nil)
@@ -313,7 +325,7 @@ func TestDeleteByIdsEmployees(t *testing.T) {
 	t.Run("When fail error 500", func(t *testing.T) {
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := Controller{Server: server, employeeService: svc}
+		controller := Controller{Server: server, employeeService: svc, logger: logger}
 		controller.RegisterRoutes()
 		expected := []Response{{Id: 0}}
 		input := []int64{1, 2}
@@ -331,10 +343,13 @@ func TestDeleteByIdsEmployees(t *testing.T) {
 
 func TestFindByIdsEmployees(t *testing.T) {
 	a := assert.New(t)
+	logger := &common.Logger{
+		Logger: zap.NewNop(),
+	}
 	t.Run("When find by ids with status 200", func(t *testing.T) {
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := Controller{Server: server, employeeService: svc}
+		controller := Controller{Server: server, employeeService: svc, logger: logger}
 		controller.RegisterRoutes()
 
 		expected := []Response{{Id: 1}, {Id: 2}}
@@ -356,7 +371,7 @@ func TestFindByIdsEmployees(t *testing.T) {
 	t.Run("When fail error 400", func(t *testing.T) {
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := Controller{Server: server, employeeService: svc}
+		controller := Controller{Server: server, employeeService: svc, logger: logger}
 		controller.RegisterRoutes()
 
 		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees/ids", nil)
@@ -368,7 +383,7 @@ func TestFindByIdsEmployees(t *testing.T) {
 	t.Run("When fail error 500", func(t *testing.T) {
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := Controller{Server: server, employeeService: svc}
+		controller := Controller{Server: server, employeeService: svc, logger: logger}
 		controller.RegisterRoutes()
 		expected := []Response{{Id: 0}}
 		input := []int64{1, 2}
@@ -386,10 +401,13 @@ func TestFindByIdsEmployees(t *testing.T) {
 
 func TestFindByIdEmployee(t *testing.T) {
 	a := assert.New(t)
+	logger := &common.Logger{
+		Logger: zap.NewNop(),
+	}
 	t.Run("When find by id status 200", func(t *testing.T) {
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := Controller{Server: server, employeeService: svc}
+		controller := Controller{Server: server, employeeService: svc, logger: logger}
 		controller.RegisterRoutes()
 
 		svc.On("FindById", int64(2)).Return(Response{Id: 2}, nil)
@@ -402,7 +420,7 @@ func TestFindByIdEmployee(t *testing.T) {
 	t.Run("When fail error 400", func(t *testing.T) {
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := Controller{Server: server, employeeService: svc}
+		controller := Controller{Server: server, employeeService: svc, logger: logger}
 		controller.RegisterRoutes()
 
 		svc.On("FindById", int64(0)).Return(Response{Id: 0}, nil)
@@ -415,7 +433,7 @@ func TestFindByIdEmployee(t *testing.T) {
 	t.Run("When fail error 500", func(t *testing.T) {
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := Controller{Server: server, employeeService: svc}
+		controller := Controller{Server: server, employeeService: svc, logger: logger}
 		controller.RegisterRoutes()
 
 		svc.On("FindById", int64(0)).Return(Response{Id: 0}, errors.New("db failure"))
@@ -428,11 +446,13 @@ func TestFindByIdEmployee(t *testing.T) {
 
 func TestFindAllEmployees(t *testing.T) {
 	a := assert.New(t)
-
+	logger := &common.Logger{
+		Logger: zap.NewNop(),
+	}
 	t.Run("When find all employees status 200", func(t *testing.T) {
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := Controller{Server: server, employeeService: svc}
+		controller := Controller{Server: server, employeeService: svc, logger: logger}
 		controller.RegisterRoutes()
 
 		expected := []Response{{Id: 1}, {Id: 2}}
@@ -447,7 +467,7 @@ func TestFindAllEmployees(t *testing.T) {
 	t.Run("When find all employees status 500", func(t *testing.T) {
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := Controller{Server: server, employeeService: svc}
+		controller := Controller{Server: server, employeeService: svc, logger: logger}
 		controller.RegisterRoutes()
 
 		expected := []Response{{Id: 1}, {Id: 2}}

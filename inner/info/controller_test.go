@@ -6,6 +6,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"go.uber.org/zap"
 	"idm/inner/common"
 	"idm/inner/web"
 	"net/http"
@@ -34,6 +35,9 @@ func (m *MockDb) JSON(data interface{}) error {
 
 func TestGetInfo(t *testing.T) {
 	a := assert.New(t)
+	logger := &common.Logger{
+		Logger: zap.NewNop(),
+	}
 	t.Run("Get Info with status 200", func(t *testing.T) {
 		app := fiber.New()
 		server := &web.Server{
@@ -44,7 +48,7 @@ func TestGetInfo(t *testing.T) {
 			AppName:    "test",
 			AppVersion: "1.0.0",
 		}
-		ctrl := NewController(server, cfg, nil)
+		ctrl := NewController(server, cfg, nil, logger)
 		ctrl.RegisterRoutes()
 		req := httptest.NewRequest(http.MethodGet, "/internal/info", nil)
 		resp, err := app.Test(req)
@@ -55,6 +59,9 @@ func TestGetInfo(t *testing.T) {
 
 func TestGetHealth(t *testing.T) {
 	a := assert.New(t)
+	logger := &common.Logger{
+		Logger: zap.NewNop(),
+	}
 	t.Run("Get health with status 200", func(t *testing.T) {
 		app := fiber.New()
 		server := &web.Server{
@@ -68,7 +75,7 @@ func TestGetHealth(t *testing.T) {
 		mockDb, _, err := sqlmock.New()
 		a.Nil(err)
 		sqlxDB := sqlx.NewDb(mockDb, "sqlmock")
-		ctrl := NewController(server, cfg, sqlxDB)
+		ctrl := NewController(server, cfg, sqlxDB, logger)
 		ctrl.RegisterRoutes()
 		req := httptest.NewRequest(http.MethodGet, "/internal/health", nil)
 		resp, err := app.Test(req)
@@ -90,7 +97,7 @@ func TestGetHealth(t *testing.T) {
 		a.Nil(err)
 		mockDb.Close()
 		sqlxDB := sqlx.NewDb(mockDb, "sqlmock")
-		ctrl := NewController(server, cfg, sqlxDB)
+		ctrl := NewController(server, cfg, sqlxDB, logger)
 		ctrl.RegisterRoutes()
 		req := httptest.NewRequest(http.MethodGet, "/internal/health", nil)
 		resp, err := app.Test(req)

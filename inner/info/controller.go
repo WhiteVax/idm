@@ -3,6 +3,7 @@ package info
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
+	"go.uber.org/zap"
 	"idm/inner/common"
 	"idm/inner/web"
 )
@@ -11,13 +12,15 @@ type Controller struct {
 	server *web.Server
 	cfg    common.Config
 	db     *sqlx.DB
+	logger *common.Logger
 }
 
-func NewController(server *web.Server, cfg common.Config, db *sqlx.DB) *Controller {
+func NewController(server *web.Server, cfg common.Config, db *sqlx.DB, logger *common.Logger) *Controller {
 	return &Controller{
 		server: server,
 		cfg:    cfg,
 		db:     db,
+		logger: logger,
 	}
 }
 
@@ -40,6 +43,7 @@ func (c *Controller) GetInfo(ctx *fiber.Ctx) error {
 		Version: c.cfg.AppVersion,
 	})
 	if err != nil {
+		c.logger.Error("GetInfo", zap.Error(err))
 		return common.ErrResponse(ctx, fiber.StatusInternalServerError, "Error returning info")
 	}
 	return nil
@@ -48,6 +52,7 @@ func (c *Controller) GetInfo(ctx *fiber.Ctx) error {
 // GetHealth проверка работоспособности приложения
 func (c *Controller) GetHealth(ctx *fiber.Ctx) error {
 	if err := c.db.Ping(); err != nil {
+		c.logger.Error("GetHealth", zap.Error(err))
 		return ctx.Status(fiber.StatusServiceUnavailable).SendString("Error pinging database")
 
 	}
