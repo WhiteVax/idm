@@ -33,6 +33,6 @@ func TestNewServerMiddleware(t *testing.T) {
 		res, err := server.App.Test(req)
 		a.Nil(err)
 		a.Equal(res.StatusCode, http.StatusOK)
-		a.NotEmpty("X-Request-ID", res.Header.Get("X-Request-ID"))
+		a.NotEmpty(res.Header.Get("X-Request-ID"))
 	})
 }
