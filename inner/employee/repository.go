@@ -1,7 +1,9 @@
 package employee
 
 import (
+	"context"
 	"github.com/jmoiron/sqlx"
+	"time"
 )
 
 type Repository struct {
@@ -45,8 +47,10 @@ func (r *Repository) FindById(id int64) (employee Entity, err error) {
 	return employee, err
 }
 
-func (r *Repository) FindAll() (employees []Entity, err error) {
-	err = r.db.Select(&employees, "SELECT * FROM employee")
+func (r *Repository) FindAll(ctx context.Context) (employees []Entity, err error) {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	err = r.db.SelectContext(ctx, &employees, "SELECT * FROM employee")
 	return employees, err
 }
 
