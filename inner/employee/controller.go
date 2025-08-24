@@ -1,6 +1,7 @@
 package employee
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"github.com/gofiber/fiber/v2"
@@ -8,6 +9,7 @@ import (
 	"idm/inner/common"
 	"idm/inner/web"
 	"strconv"
+	"time"
 )
 
 type Controller struct {
@@ -23,7 +25,7 @@ type Svc interface {
 	FindByIds(ids []int64) ([]Response, error)
 	DeleteByIds(ids []int64) ([]Response, error)
 	DeleteById(id int64) (Response, error)
-	FindAll() (employees []Response, err error)
+	FindAll(ctx context.Context) (employees []Response, err error)
 }
 
 func NewController(server *web.Server, employeeService Svc, logger *common.Logger) *Controller {
@@ -146,8 +148,14 @@ func (c *Controller) DeleteByIds(ctx *fiber.Ctx) error {
 }
 
 func (c *Controller) FindAll(ctx *fiber.Ctx) error {
-	employees, err := c.employeeService.FindAll()
+	con, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	employees, err := c.employeeService.FindAll(con)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			c.logger.Error("FindAll: request timeout", zap.Error(err))
+			return ctx.Status(fiber.StatusRequestTimeout).JSON(fiber.Map{"Error": "request timeout"})
+		}
 		c.logger.Error("FindAll: error finding", zap.Error(err))
 		return common.ErrResponse(ctx, fiber.StatusInternalServerError, err.Error())
 	}

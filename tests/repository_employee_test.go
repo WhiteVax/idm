@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"github.com/stretchr/testify/assert"
 	"idm/inner/database"
 	"idm/inner/employee"
@@ -46,7 +47,8 @@ func TestEmployeeRepositoryWhenAdd(t *testing.T) {
 	a := assert.New(t)
 
 	db := database.ConnectDb()
-
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
 	var clearDatabase = func() {
 		db.MustExec("DELETE FROM employee")
 	}
@@ -76,7 +78,7 @@ func TestEmployeeRepositoryWhenAdd(t *testing.T) {
 		err = tx.Commit()
 		a.Nil(err)
 
-		employees, err := repo.FindAll()
+		employees, err := repo.FindAll(ctx)
 		a.Nil(err)
 		a.Equal(1, len(employees))
 		a.Equal(entity.Name, employees[0].Name)
@@ -110,7 +112,8 @@ func TestEmployeeRepositoryWhenFindAll(t *testing.T) {
 	t.Cleanup(func() {
 		db.MustExec("DELETE FROM employee")
 	})
-
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
 	repo := employee.NewEmployeeRepository(db)
 	fixture := NewFixtureEmployee(repo)
 
@@ -118,7 +121,7 @@ func TestEmployeeRepositoryWhenFindAll(t *testing.T) {
 	fixture.Employee("John", "Vi", 60, time.Now(), time.Now())
 
 	t.Run("Find all", func(t *testing.T) {
-		got, err := repo.FindAll()
+		got, err := repo.FindAll(ctx)
 		a.Nil(err)
 		a.Equal(2, len(got))
 	})
@@ -198,7 +201,7 @@ func TestEmployeeRepositoryWhenDeleteByIds(t *testing.T) {
 	})
 
 	t.Run("Test deleted ids and finding one employee", func(t *testing.T) {
-		got, err := repo.FindAll()
+		got, err := repo.FindAll(context.Background())
 		a.NoError(err)
 		a.Len(got, 1)
 	})

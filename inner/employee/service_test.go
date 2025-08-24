@@ -1,6 +1,7 @@
 package employee
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
@@ -42,7 +43,7 @@ func (m *MockEmployeeRepo) FindById(id int64) (Entity, error) {
 	return args.Get(0).(Entity), args.Error(1)
 }
 
-func (m *MockEmployeeRepo) FindAll() ([]Entity, error) {
+func (m *MockEmployeeRepo) FindAll(context.Context) ([]Entity, error) {
 	args := m.Called()
 	return args.Get(0).([]Entity), args.Error(1)
 }
@@ -210,7 +211,7 @@ func TestFindAll(t *testing.T) {
 	svc := NewService(repo, validator.Validator{})
 	t.Run("Should find empty slice employees", func(t *testing.T) {
 		repo.On("FindAll").Return([]Entity(nil), nil)
-		got, err := svc.FindAll()
+		got, err := svc.FindAll(context.Background())
 		a.Nil(err)
 		a.Len(got, 0)
 	})

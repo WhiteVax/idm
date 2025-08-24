@@ -24,7 +24,7 @@ func main() {
 	db := database2.ConnectDbWithCfg(cfg)
 	defer func() {
 		if err := db.Close(); err != nil {
-			logger.Error("Error closing db: %s", zap.Error(err))
+			logger.Error("Error closing db", zap.Error(err))
 		}
 	}()
 
@@ -32,7 +32,7 @@ func main() {
 	go func() {
 		var err = server.App.Listen(":8080")
 		if err != nil {
-			logger.Panic("http server error: %s", zap.Error(err))
+			logger.Panic("http server error", zap.Error(err))
 		}
 	}()
 	var wg = &sync.WaitGroup{}

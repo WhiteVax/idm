@@ -2,6 +2,7 @@ package employee
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -43,7 +44,7 @@ func (svc *MockService) DeleteById(id int64) (Response, error) {
 	return args.Get(0).(Response), args.Error(1)
 }
 
-func (svc *MockService) FindAll() (employees []Response, err error) {
+func (svc *MockService) FindAll(context.Context) (employees []Response, err error) {
 	args := svc.Mock.Called()
 	return args.Get(0).([]Response), args.Error(1)
 }

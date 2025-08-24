@@ -1,6 +1,7 @@
 package employee
 
 import (
+	"context"
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"idm/inner/common"
@@ -14,7 +15,7 @@ type Service struct {
 type Repo interface {
 	Add(tx *sqlx.Tx, employee Entity) (id int64, err error)
 	FindById(id int64) (Entity, error)
-	FindAll() ([]Entity, error)
+	FindAll(ctx context.Context) ([]Entity, error)
 	FindBySliceIds(ids []int64) ([]Entity, error)
 	DeleteById(id int64) (bool, error)
 	DeleteBySliceIds(ids []int64) ([]int64, error)
@@ -197,8 +198,8 @@ func (svc *Service) DeleteById(id int64) (Response, error) {
 	return Response{Id: id}, nil
 }
 
-func (svc *Service) FindAll() (employees []Response, err error) {
-	rsl, err := svc.repo.FindAll()
+func (svc *Service) FindAll(ctx context.Context) (employees []Response, err error) {
+	rsl, err := svc.repo.FindAll(ctx)
 	if err != nil {
 		return []Response{}, fmt.Errorf("Error finding employees: %w", err)
 	}
