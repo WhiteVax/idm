@@ -2,8 +2,9 @@ package employee
 
 import (
 	"context"
-	"github.com/jmoiron/sqlx"
 	"time"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type Repository struct {
@@ -83,6 +84,9 @@ func (r *Repository) FindBySliceIds(ids []int64) (employees []Entity, err error)
 	}
 	query = r.db.Rebind(query)
 	err = r.db.Select(&employees, query, args...)
+	if err != nil {
+		return nil, err
+	}
 	return employees, nil
 }
 
@@ -92,6 +96,9 @@ func (r *Repository) DeleteById(id int64) (bool, error) {
 		return false, err
 	}
 	rowInter, err := result.RowsAffected()
+	if err != nil {
+		return false, err
+	}
 	return rowInter > 0, nil
 }
 
