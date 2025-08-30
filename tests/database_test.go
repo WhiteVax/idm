@@ -9,9 +9,10 @@ import (
 
 // Проверка через Пинг соединения
 func TestConnectionWhenConnectionSuccessful(t *testing.T) {
-
 	os.Setenv("DB_DRIVER_NAME", "postgres")
 	os.Setenv("DB_DSN", "host=127.0.0.1 port=5440 user=postgres password=test_postgres dbname=postgres sslmode=disable")
+	os.Setenv("APP_NAME", "idm")
+	os.Setenv("APP_VERSION", "0.0.0")
 	cfg := common.GetConfig("")
 	defer os.Unsetenv("DB_DRIVER_NAME")
 	defer os.Unsetenv("DB_DSN")

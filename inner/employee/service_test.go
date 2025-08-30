@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"idm/inner/validator"
-	"testing"
-	"time"
 )
 
 type MockEmployeeRepo struct {
@@ -63,12 +63,17 @@ func (m *MockEmployeeRepo) FindBySliceIds(ids []int64) ([]Entity, error) {
 	return args.Get(0).([]Entity), args.Error(1)
 }
 
+func (m *MockEmployeeRepo) FindAllWithLimitOffset(ctx context.Context, limit int64, offset int64) (employees []Entity, total int64, err error) {
+	args := m.Called(ctx, limit, offset)
+	return args.Get(0).([]Entity), args.Get(1).(int64), args.Error(2)
+}
+
 func TestFindById(t *testing.T) {
 	a := assert.New(t)
 
 	t.Run("Should return found employee", func(t *testing.T) {
 		repo := new(MockEmployeeRepo)
-		svc := NewService(repo, validator.Validator{})
+		svc := NewService(repo)
 
 		entity := Entity{
 			Id:        int64(1),
@@ -90,7 +95,7 @@ func TestFindById(t *testing.T) {
 
 	t.Run("Should return error if id <= 0", func(t *testing.T) {
 		repo := new(MockEmployeeRepo)
-		svc := NewService(repo, validator.Validator{})
+		svc := NewService(repo)
 
 		got, err := svc.FindById(0)
 
@@ -108,7 +113,7 @@ func TestServiceAdd(t *testing.T) {
 
 	t.Run("Should add employee", func(t *testing.T) {
 		repo := new(MockEmployeeRepo)
-		svc := NewService(repo, validator.Validator{})
+		svc := NewService(repo)
 		sqlxDB := sqlx.NewDb(db, "sqlmock_db")
 		mockTr.ExpectBegin()
 		mockTr.ExpectCommit()
@@ -138,7 +143,7 @@ func TestServiceAdd(t *testing.T) {
 
 	t.Run("Should fail when add duplicated", func(t *testing.T) {
 		repo := new(MockEmployeeRepo)
-		svc := NewService(repo, validator.Validator{})
+		svc := NewService(repo)
 		sqlxDB := sqlx.NewDb(db, "sqlmock_db")
 		mockTr.ExpectBegin()
 		mockTr.ExpectRollback()
@@ -165,7 +170,7 @@ func TestServiceAdd(t *testing.T) {
 
 	t.Run("Should fail on empty entity", func(t *testing.T) {
 		repo := new(MockEmployeeRepo)
-		svc := NewService(repo, validator.Validator{})
+		svc := NewService(repo)
 		rsl, err := svc.Add(Entity{})
 		a.Error(err)
 		a.Contains(err.Error(), "Entity is empty")
@@ -174,7 +179,7 @@ func TestServiceAdd(t *testing.T) {
 
 	t.Run("Should fail on invalid fields", func(t *testing.T) {
 		repo := new(MockEmployeeRepo)
-		svc := NewService(repo, validator.Validator{})
+		svc := NewService(repo)
 		badEmployee := Entity{
 			Name:    "",
 			Surname: "Doe",
@@ -188,7 +193,7 @@ func TestServiceAdd(t *testing.T) {
 
 	t.Run("Should fail on transaction begin error", func(t *testing.T) {
 		repo := new(MockEmployeeRepo)
-		svc := NewService(repo, validator.Validator{})
+		svc := NewService(repo)
 		employee := Entity{
 			Name:      "John",
 			Surname:   "Doe",
@@ -208,7 +213,7 @@ func TestServiceAdd(t *testing.T) {
 func TestFindAll(t *testing.T) {
 	a := assert.New(t)
 	repo := new(MockEmployeeRepo)
-	svc := NewService(repo, validator.Validator{})
+	svc := NewService(repo)
 	t.Run("Should find empty slice employees", func(t *testing.T) {
 		repo.On("FindAll").Return([]Entity(nil), nil)
 		got, err := svc.FindAll(context.Background())
@@ -220,7 +225,7 @@ func TestFindAll(t *testing.T) {
 func TestDeleteById(t *testing.T) {
 	a := assert.New(t)
 	repo := new(MockEmployeeRepo)
-	svc := NewService(repo, validator.Validator{})
+	svc := NewService(repo)
 	t.Run("Should delete employee", func(t *testing.T) {
 		repo.On("DeleteById", int64(1)).Return(true, nil)
 		got, err := svc.DeleteById(1)
@@ -246,7 +251,7 @@ func TestDeleteById(t *testing.T) {
 func TestFindByIds(t *testing.T) {
 	a := assert.New(t)
 	mockRepo := new(MockEmployeeRepo)
-	svc := NewService(mockRepo, validator.Validator{})
+	svc := NewService(mockRepo)
 
 	t.Run("Should return finding employees", func(t *testing.T) {
 		// Stub
@@ -292,7 +297,7 @@ func TestFindByIds(t *testing.T) {
 func TestDeleteByIds(t *testing.T) {
 	a := assert.New(t)
 	mockRepo := new(MockEmployeeRepo)
-	svc := NewService(mockRepo, validator.Validator{})
+	svc := NewService(mockRepo)
 	t.Run("Should delete employee", func(t *testing.T) {
 		ids := []int64{1, 2}
 		mockRepo.On("DeleteBySliceIds", ids).Return(ids, nil)

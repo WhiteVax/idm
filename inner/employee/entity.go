@@ -39,10 +39,22 @@ func (e *Entity) ToResponse() Response {
 }
 
 type Response struct {
-	Id        int64     `json:"id"`
-	Name      string    `json:"name"`
-	Surname   string    `json:"surname"`
-	Age       int8      `json:"age"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	Id        int64     `json:"id" query:"id"`
+	Name      string    `json:"name" query:"name"`
+	Surname   string    `json:"surname" query:"surname"`
+	Age       int8      `json:"age" query:"age"`
+	CreatedAt time.Time `json:"created_at" query:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" query:"updated_at"`
+}
+
+type PageRequest struct {
+	PageNumber int `json:"page_number" query:"page_number" validate:"min=0"`
+	PageSize   int `json:"page_size" query:"page_size" validate:"min=1,max=100"`
+}
+
+type PageResponse struct {
+	Result   []Response `json:"result" query:"result"`
+	PageSize int        `json:"page_size" query:"page_size"`
+	PageNum  int        `json:"page_num" query:"page_num"`
+	Total    int64      `json:"total" query:"total"`
 }

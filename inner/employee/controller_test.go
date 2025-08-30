@@ -6,10 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gofiber/fiber/v2"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"go.uber.org/zap"
 	"idm/inner/common"
 	"idm/inner/web"
 	"io"
@@ -18,6 +14,11 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"go.uber.org/zap"
 )
 
 type MockService struct {
@@ -57,6 +58,11 @@ func (svc *MockService) FindById(id int64) (Response, error) {
 func (svc *MockService) CreateEmployee(request CreateRequest) (int64, error) {
 	args := svc.Called(request)
 	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockService) FindAllWithLimitOffset(ctx context.Context, req PageRequest) (PageResponse, error) {
+	args := m.Called(ctx, req)
+	return args.Get(0).(PageResponse), args.Error(1)
 }
 
 func TestCreateEmployee(t *testing.T) {
@@ -478,5 +484,138 @@ func TestFindAllEmployees(t *testing.T) {
 		resp, err := server.App.Test(req)
 		a.Nil(err)
 		a.Equal(http.StatusInternalServerError, resp.StatusCode)
+	})
+}
+
+func TestFindAllEmployeesWithLimitOffset(t *testing.T) {
+
+	t.Run("Should return 200 OK with valid request", func(t *testing.T) {
+		a := assert.New(t)
+		server := web.NewServer()
+		svc := new(MockService)
+		controller := NewController(server, svc, &common.Logger{Logger: zap.NewNop()})
+		controller.RegisterRoutes()
+		expectedResponse := PageResponse{
+			Result:   []Response{{Id: 1, Name: "John"}},
+			PageSize: 10,
+			PageNum:  0,
+			Total:    100,
+		}
+		svc.On("FindAllWithLimitOffset",
+			mock.Anything,
+			mock.MatchedBy(func(req PageRequest) bool {
+				return req.PageNumber == 0 && req.PageSize == 10
+			}),
+		).Return(expectedResponse, nil)
+		req := httptest.NewRequest(
+			http.MethodGet,
+			"/api/v1/employees/page?page_number=0&page_size=10",
+			nil,
+		)
+		resp, err := server.App.Test(req, -1) // -1 — без таймаута
+		a.Nil(err)
+		defer resp.Body.Close()
+		a.Equal(fiber.StatusOK, resp.StatusCode)
+		var actualResponse PageResponse
+		err = json.NewDecoder(resp.Body).Decode(&actualResponse)
+		a.Nil(err)
+		svc.AssertExpectations(t)
+	})
+
+	t.Run("Should return 400 BadRequest on invalid body", func(t *testing.T) {
+		a := assert.New(t)
+		server := web.NewServer()
+		svc := new(MockService)
+		controller := NewController(server, svc, &common.Logger{Logger: zap.NewNop()})
+		controller.RegisterRoutes()
+
+		body := `{"page_size":"abc","page_number":1}`
+		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees/page", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := server.App.Test(req)
+		a.Nil(err)
+		defer resp.Body.Close()
+
+		a.Equal(fiber.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("Should return 400 BadRequest on validation error", func(t *testing.T) {
+		a := assert.New(t)
+		server := web.NewServer()
+		svc := new(MockService)
+		controller := NewController(server, svc, &common.Logger{Logger: zap.NewNop()})
+		controller.RegisterRoutes()
+
+		// Отправляем невалидные данные (отрицательный page_number)
+		body := `{"page_size":3,"page_number":-1}`
+		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees/page", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := server.App.Test(req)
+		a.Nil(err)
+		defer resp.Body.Close()
+
+		a.Equal(fiber.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("Should return 500 InternalServerError on service error", func(t *testing.T) {
+		a := assert.New(t)
+
+		server := web.NewServer()
+		svc := new(MockService)
+		controller := NewController(server, svc, &common.Logger{Logger: zap.NewNop()})
+		controller.RegisterRoutes()
+
+		// Мок с проверкой аргументов через MatchedBy
+		svc.On("FindAllWithLimitOffset",
+			mock.Anything,
+			mock.MatchedBy(func(req PageRequest) bool {
+				return req.PageNumber == 1 && req.PageSize == 3
+			}),
+		).Return(PageResponse{}, errors.New("database connection failed"))
+
+		req := httptest.NewRequest(
+			fiber.MethodGet,
+			"/api/v1/employees/page?page_number=1&page_size=3",
+			nil,
+		)
+
+		resp, err := server.App.Test(req, -1)
+		a.Nil(err)
+		defer resp.Body.Close()
+
+		a.Equal(fiber.StatusInternalServerError, resp.StatusCode)
+
+		svc.AssertExpectations(t)
+	})
+
+	t.Run("Should return 408 RequestTimeout on context deadline exceeded", func(t *testing.T) {
+		a := assert.New(t)
+
+		server := web.NewServer()
+		svc := new(MockService)
+		controller := NewController(server, svc, &common.Logger{Logger: zap.NewNop()})
+		controller.RegisterRoutes()
+
+		svc.On("FindAllWithLimitOffset",
+			mock.Anything,
+			mock.MatchedBy(func(req PageRequest) bool {
+				return req.PageNumber == 1 && req.PageSize == 3
+			}),
+		).Return(PageResponse{}, context.DeadlineExceeded)
+
+		req := httptest.NewRequest(
+			fiber.MethodGet,
+			"/api/v1/employees/page?page_number=1&page_size=3",
+			nil,
+		)
+
+		resp, err := server.App.Test(req, -1)
+		a.Nil(err)
+		defer resp.Body.Close()
+
+		a.Equal(fiber.StatusRequestTimeout, resp.StatusCode)
+		svc.AssertExpectations(t)
 	})
 }

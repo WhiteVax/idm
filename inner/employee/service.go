@@ -3,13 +3,15 @@ package employee
 import (
 	"context"
 	"fmt"
-	"github.com/jmoiron/sqlx"
 	"idm/inner/common"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/jmoiron/sqlx"
 )
 
 type Service struct {
 	repo      Repo
-	validator Validator
+	validator *validator.Validate
 }
 
 type Repo interface {
@@ -21,20 +23,15 @@ type Repo interface {
 	DeleteBySliceIds(ids []int64) ([]int64, error)
 	BeginTr() (*sqlx.Tx, error)
 	FindByNameAndSurname(tx *sqlx.Tx, name, surname string) (isExists bool, err error)
+	FindAllWithLimitOffset(ctx context.Context, limit int64, offset int64) (employees []Entity, total int64, err error)
 }
 
 type Validator interface {
 	Validate(request any) error
 }
 
-func NewService(
-	repo Repo,
-	validator Validator,
-) *Service {
-	return &Service{
-		repo:      repo,
-		validator: validator,
-	}
+func NewService(repo Repo) *Service {
+	return &Service{repo: repo, validator: validator.New()}
 }
 
 func (svc *Service) FindById(id int64) (Response, error) {
@@ -106,7 +103,7 @@ func (svc *Service) Add(employee Entity) (response Response, err error) {
 
 func (svc *Service) CreateEmployee(request CreateRequest) (int64, error) {
 
-	var err = svc.validator.Validate(request)
+	var err = svc.validator.Struct(request)
 	if err != nil {
 		return 0, common.RequestValidationError{Message: err.Error()}
 	}
@@ -207,4 +204,27 @@ func (svc *Service) FindAll(ctx context.Context) (employees []Response, err erro
 		employees = append(employees, e.ToResponse())
 	}
 	return employees, nil
+}
+
+func (svc *Service) FindAllWithLimitOffset(ctx context.Context, req PageRequest) (result PageResponse, err error) {
+	if err := svc.validator.Struct(req); err != nil {
+		return PageResponse{}, common.RequestValidationError{Message: err.Error()}
+	}
+	limit := req.PageSize
+	offset := req.PageNumber * req.PageSize
+	entities, total, err := svc.repo.FindAllWithLimitOffset(ctx, int64(limit), int64(offset))
+	if err != nil {
+		return PageResponse{}, fmt.Errorf("Error finding employees with limit/offset: %w", err)
+	}
+
+	resp := make([]Response, 0, len(entities))
+	for _, e := range entities {
+		resp = append(resp, e.ToResponse())
+	}
+	return PageResponse{
+		Result:   resp,
+		PageSize: req.PageSize,
+		PageNum:  req.PageNumber,
+		Total:    total,
+	}, nil
 }

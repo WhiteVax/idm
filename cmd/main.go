@@ -2,19 +2,19 @@ package main
 
 import (
 	"context"
-	"github.com/jmoiron/sqlx"
-	"go.uber.org/zap"
 	"idm/inner/common"
 	database2 "idm/inner/database"
 	"idm/inner/employee"
 	"idm/inner/info"
 	"idm/inner/role"
-	"idm/inner/validator"
 	"idm/inner/web"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/jmoiron/sqlx"
+	"go.uber.org/zap"
 )
 
 func main() {
@@ -61,8 +61,7 @@ func build(database *sqlx.DB, logger *common.Logger) *web.Server {
 	var cfg = common.GetConfig(".env")
 	var server = web.NewServer()
 	var employeeRepo = employee.NewEmployeeRepository(database)
-	var vld = validator.New()
-	var employeeService = employee.NewService(employeeRepo, vld)
+	var employeeService = employee.NewService(employeeRepo)
 	var employeeController = employee.NewController(server, employeeService, logger)
 	employeeController.RegisterRoutes()
 	var roleRepo = role.NewRepository(database)

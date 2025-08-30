@@ -39,7 +39,10 @@ func (r *Repository) FindByNameAndSurname(tx *sqlx.Tx, name, surname string) (is
 		&isExists,
 		"select exists(select from employee where name = $1 and surname = $2)",
 		name, surname)
-	return isExists, err
+	if err != nil {
+		return false, err
+	}
+	return isExists, nil
 }
 
 func (r *Repository) FindById(id int64) (employee Entity, err error) {
@@ -51,7 +54,26 @@ func (r *Repository) FindAll(ctx context.Context) (employees []Entity, err error
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 	err = r.db.SelectContext(ctx, &employees, "SELECT * FROM employee")
-	return employees, err
+	if err != nil {
+		return nil, err
+	}
+	return employees, nil
+}
+
+func (r *Repository) FindAllWithLimitOffset(ctx context.Context, limit int64, offset int64) ([]Entity, int64, error) {
+	ctx, cancel := context.WithTimeout(ctx, 4*time.Second)
+	defer cancel()
+	var employees []Entity
+	err := r.db.SelectContext(ctx, &employees, "SELECT * FROM employee ORDER BY id ASC LIMIT $1 OFFSET $2", limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	var total int64
+	err = r.db.GetContext(ctx, &total, "SELECT COUNT(*) FROM employee")
+	if err != nil {
+		return nil, 0, err
+	}
+	return employees, total, nil
 }
 
 func (r *Repository) FindBySliceIds(ids []int64) (employees []Entity, err error) {
@@ -61,7 +83,7 @@ func (r *Repository) FindBySliceIds(ids []int64) (employees []Entity, err error)
 	}
 	query = r.db.Rebind(query)
 	err = r.db.Select(&employees, query, args...)
-	return employees, err
+	return employees, nil
 }
 
 func (r *Repository) DeleteById(id int64) (bool, error) {
@@ -70,13 +92,13 @@ func (r *Repository) DeleteById(id int64) (bool, error) {
 		return false, err
 	}
 	rowInter, err := result.RowsAffected()
-	return rowInter > 0, err
+	return rowInter > 0, nil
 }
 
 func (r *Repository) DeleteBySliceIds(ids []int64) ([]int64, error) {
 	query, args, err := sqlx.In("DELETE FROM employee WHERE id IN (?) RETURNING id", ids)
 	if err != nil {
-		return nil, err
+		return nil, nil
 	}
 
 	query = r.db.Rebind(query)

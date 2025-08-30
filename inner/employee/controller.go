@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/gofiber/fiber/v2"
-	"go.uber.org/zap"
 	"idm/inner/common"
 	"idm/inner/web"
 	"strconv"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"go.uber.org/zap"
 )
 
 type Controller struct {
@@ -26,6 +27,7 @@ type Svc interface {
 	DeleteByIds(ids []int64) ([]Response, error)
 	DeleteById(id int64) (Response, error)
 	FindAll(ctx context.Context) (employees []Response, err error)
+	FindAllWithLimitOffset(ctx context.Context, req PageRequest) (result PageResponse, err error)
 }
 
 func NewController(server *web.Server, employeeService Svc, logger *common.Logger) *Controller {
@@ -45,6 +47,7 @@ func (c *Controller) RegisterRoutes() {
 	c.Server.GroupApiV1.Delete("/employees/ids", c.DeleteByIds)
 	c.Server.GroupApiV1.Delete("/employees/:id", c.DeleteById)
 	c.Server.GroupApiV1.Get("/employees", c.FindAll)
+	c.Server.GroupApiV1.Get("/employees/page", c.FindByPages)
 }
 
 func (c *Controller) CreateEmployee(ctx *fiber.Ctx) error {
@@ -157,6 +160,33 @@ func (c *Controller) FindAll(ctx *fiber.Ctx) error {
 			return ctx.Status(fiber.StatusRequestTimeout).JSON(fiber.Map{"Error": "request timeout"})
 		}
 		c.logger.Error("FindAll: error finding", zap.Error(err))
+		return common.ErrResponse(ctx, fiber.StatusInternalServerError, err.Error())
+	}
+	return common.OkResponse(ctx, employees)
+}
+
+func (c *Controller) FindByPages(ctx *fiber.Ctx) error {
+	var request PageRequest
+	if err := ctx.QueryParser(&request); err != nil {
+		c.logger.Error("FindByPages: query parse error", zap.Error(err))
+		return common.ErrResponse(ctx, fiber.StatusBadRequest, "Invalid query parameters")
+	}
+	c.logger.Debug("FindByPages: received page request", zap.Any("request", request))
+
+	con, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+	employees, err := c.employeeService.FindAllWithLimitOffset(con, request)
+	if err != nil {
+		var validationErr common.RequestValidationError
+		if ok := errors.As(err, &validationErr); ok {
+			c.logger.Error("FindByPages: validation error", zap.Error(err))
+			return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
+		}
+		if errors.Is(err, context.DeadlineExceeded) {
+			c.logger.Error("FindByPages: request timeout", zap.Error(err))
+			return ctx.Status(fiber.StatusRequestTimeout).JSON(fiber.Map{"error": "request timeout"})
+		}
+		c.logger.Error("FindByPages: internal error", zap.Error(err))
 		return common.ErrResponse(ctx, fiber.StatusInternalServerError, err.Error())
 	}
 	return common.OkResponse(ctx, employees)
