@@ -1,22 +1,23 @@
 package info
 
 import (
+	"idm/inner/common"
+	"idm/inner/web"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
-	"idm/inner/common"
-	"idm/inner/web"
 )
 
-type Controller struct {
+type Handler struct {
 	server *web.Server
 	cfg    common.Config
 	db     *sqlx.DB
 	logger *common.Logger
 }
 
-func NewController(server *web.Server, cfg common.Config, db *sqlx.DB, logger *common.Logger) *Controller {
-	return &Controller{
+func NewHandler(server *web.Server, cfg common.Config, db *sqlx.DB, logger *common.Logger) *Handler {
+	return &Handler{
 		server: server,
 		cfg:    cfg,
 		db:     db,
@@ -29,15 +30,14 @@ type InfoResponse struct {
 	Version string `json:"version"`
 }
 
-func (c *Controller) RegisterRoutes() {
-	// полный путь будет "/internal/info"
+// RegisterRoutes() - регистрация  "/internal/info" / "/internal/health"
+func (c *Handler) RegisterRoutes() {
 	c.server.GroupInternal.Get("/info", c.GetInfo)
-	// полный путь будет "/internal/health"
 	c.server.GroupInternal.Get("/health", c.GetHealth)
 }
 
-// GetInfo получение информации о приложении
-func (c *Controller) GetInfo(ctx *fiber.Ctx) error {
+// GetInfo - получение информации о приложении
+func (c *Handler) GetInfo(ctx *fiber.Ctx) error {
 	var err = ctx.Status(fiber.StatusOK).JSON(&InfoResponse{
 		Name:    c.cfg.AppName,
 		Version: c.cfg.AppVersion,
@@ -49,8 +49,8 @@ func (c *Controller) GetInfo(ctx *fiber.Ctx) error {
 	return nil
 }
 
-// GetHealth проверка работоспособности приложения
-func (c *Controller) GetHealth(ctx *fiber.Ctx) error {
+// GetHealth - проверка работоспособности приложения
+func (c *Handler) GetHealth(ctx *fiber.Ctx) error {
 	if err := c.db.Ping(); err != nil {
 		c.logger.Error("GetHealth", zap.Error(err))
 		return ctx.Status(fiber.StatusServiceUnavailable).SendString("Error pinging database")

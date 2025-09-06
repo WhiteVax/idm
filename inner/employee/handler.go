@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type Controller struct {
+type Handler struct {
 	Server          *web.Server
 	employeeService Svc
 	logger          *common.Logger
@@ -30,16 +30,16 @@ type Svc interface {
 	FindAllWithLimitOffset(ctx context.Context, req PageRequest) (result PageResponse, err error)
 }
 
-func NewController(server *web.Server, employeeService Svc, logger *common.Logger) *Controller {
-	return &Controller{
+func NewHandler(server *web.Server, employeeService Svc, logger *common.Logger) *Handler {
+	return &Handler{
 		Server:          server,
 		employeeService: employeeService,
 		logger:          logger,
 	}
 }
 
-func (c *Controller) RegisterRoutes() {
-	// полный маршрут получится "/api/v1/employees"
+// RegisterRoutes - регистрация маршрута "/api/v1/employees"
+func (c *Handler) RegisterRoutes() {
 	c.Server.GroupApiV1.Post("/employees", c.CreateEmployee)
 	c.Server.GroupApiV1.Post("/employees/add", c.AddEmployee)
 	c.Server.GroupApiV1.Post("/employees/ids", c.FindByIds)
@@ -50,7 +50,7 @@ func (c *Controller) RegisterRoutes() {
 	c.Server.GroupApiV1.Get("/employees/page", c.FindByPages)
 }
 
-func (c *Controller) CreateEmployee(ctx *fiber.Ctx) error {
+func (c *Handler) CreateEmployee(ctx *fiber.Ctx) error {
 	var request CreateRequest
 	if err := ctx.BodyParser(&request); err != nil {
 		c.logger.Error("CreateEmployee: : error body parse", zap.Error(err))
@@ -70,7 +70,7 @@ func (c *Controller) CreateEmployee(ctx *fiber.Ctx) error {
 	return common.OkResponse(ctx, newEmployeeId)
 }
 
-func (c *Controller) AddEmployee(ctx *fiber.Ctx) error {
+func (c *Handler) AddEmployee(ctx *fiber.Ctx) error {
 	var entity Entity
 	if err := ctx.BodyParser(&entity); err != nil {
 		c.logger.Error("AddEmployee: : error body parse", zap.Error(err))
@@ -87,7 +87,7 @@ func (c *Controller) AddEmployee(ctx *fiber.Ctx) error {
 	return common.OkResponse(ctx, newEmployeeId)
 }
 
-func (c *Controller) FindById(ctx *fiber.Ctx) error {
+func (c *Handler) FindById(ctx *fiber.Ctx) error {
 	idParam := ctx.Params("id")
 	id, err := strconv.ParseInt(idParam, 10, 64)
 	if err != nil {
@@ -103,7 +103,7 @@ func (c *Controller) FindById(ctx *fiber.Ctx) error {
 	return common.OkResponse(ctx, employee)
 }
 
-func (c *Controller) FindByIds(ctx *fiber.Ctx) error {
+func (c *Handler) FindByIds(ctx *fiber.Ctx) error {
 	var ids []int64
 	if err := ctx.BodyParser(&ids); err != nil {
 		c.logger.Error("FindByIds: : error body parse", zap.Error(err))
@@ -118,7 +118,7 @@ func (c *Controller) FindByIds(ctx *fiber.Ctx) error {
 	return common.OkResponse(ctx, employees)
 }
 
-func (c *Controller) DeleteById(ctx *fiber.Ctx) error {
+func (c *Handler) DeleteById(ctx *fiber.Ctx) error {
 	idParam := ctx.Params("id")
 	id, err := strconv.ParseInt(idParam, 10, 64)
 	if err != nil {
@@ -134,7 +134,7 @@ func (c *Controller) DeleteById(ctx *fiber.Ctx) error {
 	return common.OkResponse(ctx, rsl)
 }
 
-func (c *Controller) DeleteByIds(ctx *fiber.Ctx) error {
+func (c *Handler) DeleteByIds(ctx *fiber.Ctx) error {
 	bodyBytes := ctx.Body()
 	var ids []int64
 	if err := json.Unmarshal(bodyBytes, &ids); err != nil {
@@ -150,7 +150,7 @@ func (c *Controller) DeleteByIds(ctx *fiber.Ctx) error {
 	return common.OkResponse(ctx, rsl)
 }
 
-func (c *Controller) FindAll(ctx *fiber.Ctx) error {
+func (c *Handler) FindAll(ctx *fiber.Ctx) error {
 	con, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	employees, err := c.employeeService.FindAll(con)
@@ -165,7 +165,7 @@ func (c *Controller) FindAll(ctx *fiber.Ctx) error {
 	return common.OkResponse(ctx, employees)
 }
 
-func (c *Controller) FindByPages(ctx *fiber.Ctx) error {
+func (c *Handler) FindByPages(ctx *fiber.Ctx) error {
 	var request PageRequest
 	if err := ctx.QueryParser(&request); err != nil {
 		c.logger.Error("FindByPages: query parse error", zap.Error(err))

@@ -25,8 +25,8 @@ func InitSchemaEmployee(r *employee.Repository) error {
 		name        TEXT NOT NULL,
 		surname     TEXT NOT NULL,
 		age         SMALLINT CHECK (age > 16 AND age < 91),
-		"create_at"  TIMESTAMPTZ NOT NULL DEFAULT now(),
-		"update_at"  TIMESTAMPTZ NOT NULL DEFAULT now()
+		"created_at"  TIMESTAMPTZ NOT NULL DEFAULT now(),
+		"updated_at"  TIMESTAMPTZ NOT NULL DEFAULT now()
 	);`
 	// Подключение к бд с созданием таблицы
 	_, err := r.DB().Exec(schema)

@@ -72,6 +72,7 @@ func TestFindById(t *testing.T) {
 	a := assert.New(t)
 
 	t.Run("Should return found employee", func(t *testing.T) {
+		t.Parallel()
 		repo := new(MockEmployeeRepo)
 		svc := NewService(repo)
 
@@ -94,6 +95,7 @@ func TestFindById(t *testing.T) {
 	})
 
 	t.Run("Should return error if id <= 0", func(t *testing.T) {
+		t.Parallel()
 		repo := new(MockEmployeeRepo)
 		svc := NewService(repo)
 
@@ -107,11 +109,12 @@ func TestFindById(t *testing.T) {
 func TestServiceAdd(t *testing.T) {
 	a := assert.New(t)
 
-	db, mockTr, err := sqlmock.New()
-	a.Nil(err)
-	defer db.Close()
-
 	t.Run("Should add employee", func(t *testing.T) {
+		t.Parallel()
+		db, mockTr, err := sqlmock.New()
+		a.Nil(err)
+		defer db.Close()
+
 		repo := new(MockEmployeeRepo)
 		svc := NewService(repo)
 		sqlxDB := sqlx.NewDb(db, "sqlmock_db")
@@ -142,6 +145,10 @@ func TestServiceAdd(t *testing.T) {
 	})
 
 	t.Run("Should fail when add duplicated", func(t *testing.T) {
+		t.Parallel()
+		db, mockTr, err := sqlmock.New()
+		a.Nil(err)
+		defer db.Close()
 		repo := new(MockEmployeeRepo)
 		svc := NewService(repo)
 		sqlxDB := sqlx.NewDb(db, "sqlmock_db")
@@ -169,6 +176,7 @@ func TestServiceAdd(t *testing.T) {
 	})
 
 	t.Run("Should fail on empty entity", func(t *testing.T) {
+		t.Parallel()
 		repo := new(MockEmployeeRepo)
 		svc := NewService(repo)
 		rsl, err := svc.Add(Entity{})
@@ -178,6 +186,7 @@ func TestServiceAdd(t *testing.T) {
 	})
 
 	t.Run("Should fail on invalid fields", func(t *testing.T) {
+		t.Parallel()
 		repo := new(MockEmployeeRepo)
 		svc := NewService(repo)
 		badEmployee := Entity{
@@ -192,6 +201,7 @@ func TestServiceAdd(t *testing.T) {
 	})
 
 	t.Run("Should fail on transaction begin error", func(t *testing.T) {
+		t.Parallel()
 		repo := new(MockEmployeeRepo)
 		svc := NewService(repo)
 		employee := Entity{
@@ -227,6 +237,7 @@ func TestDeleteById(t *testing.T) {
 	repo := new(MockEmployeeRepo)
 	svc := NewService(repo)
 	t.Run("Should delete employee", func(t *testing.T) {
+		t.Parallel()
 		repo.On("DeleteById", int64(1)).Return(true, nil)
 		got, err := svc.DeleteById(1)
 		a.Nil(err)
@@ -234,6 +245,7 @@ func TestDeleteById(t *testing.T) {
 	})
 
 	t.Run("Should return error if id <= 0", func(t *testing.T) {
+		t.Parallel()
 		repo.On("DeleteById", int64(0)).Return(false, errors.New("Wrong id: 1"))
 		got, err := svc.DeleteById(0)
 		a.Equal(Response{}, got)
@@ -241,6 +253,7 @@ func TestDeleteById(t *testing.T) {
 	})
 
 	t.Run("Should return error if any employee field is empty", func(t *testing.T) {
+		t.Parallel()
 		repo.On("DeleteById", int64(5)).Return(false, errors.New("Error deleting employee with id"))
 		got, err := svc.DeleteById(5)
 		a.Equal(Response{}, got)
@@ -254,7 +267,7 @@ func TestFindByIds(t *testing.T) {
 	svc := NewService(mockRepo)
 
 	t.Run("Should return finding employees", func(t *testing.T) {
-		// Stub
+		t.Parallel()
 		stub := &StubRepoEmployee{
 			Employees: []Entity{
 				{
@@ -288,6 +301,7 @@ func TestFindByIds(t *testing.T) {
 	})
 
 	t.Run("Should return error if any employee field is empty", func(t *testing.T) {
+		t.Parallel()
 		got, err := svc.FindByIds([]int64{})
 		a.Empty(got)
 		a.Error(err)
@@ -299,6 +313,7 @@ func TestDeleteByIds(t *testing.T) {
 	mockRepo := new(MockEmployeeRepo)
 	svc := NewService(mockRepo)
 	t.Run("Should delete employee", func(t *testing.T) {
+		t.Parallel()
 		ids := []int64{1, 2}
 		mockRepo.On("DeleteBySliceIds", ids).Return(ids, nil)
 		got, err := svc.DeleteByIds(ids)
@@ -308,6 +323,7 @@ func TestDeleteByIds(t *testing.T) {
 	})
 
 	t.Run("Should return error if ids is empty", func(t *testing.T) {
+		t.Parallel()
 		var ids []int64
 		mockRepo.On("DeleteBySliceIds", ids).Return(nil, errors.New("Wrong ids"))
 		got, err := svc.DeleteByIds(ids)

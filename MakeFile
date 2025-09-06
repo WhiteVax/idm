@@ -1,0 +1,98 @@
+ENV_FILE = .env
+
+ifneq (,$(wildcard $(ENV_FILE)))
+include $(ENV_FILE)
+endif
+
+dc_up:
+	@echo "Starting Docker containers from $(COMPOSE_FILE)"
+	docker compose --env-file $(ENV_FILE) -f $(COMPOSE_FILE) up -d
+
+dc_down:
+	@echo "Deleting Docker containers $(DB_CONTAINER)"
+	docker compose -f $(COMPOSE_FILE) down
+
+goose_up:
+	@echo "Running Goose migrations in container '$(DB_CONTAINER)'..."
+	@docker exec $(DB_CONTAINER) sh -c '\
+		GOOSE_DRIVER=$(DB_DRIVER_NAME) \
+		GOOSE_DBSTRING="$(DB_CONTAINER_DSN)" \
+		goose -dir /migrations up'
+
+goose_down:
+	@echo "Running Goose rollback in container '$(DB_CONTAINER)'..."
+	@docker exec $(DB_CONTAINER) sh -c '\
+		GOOSE_DRIVER=$(DB_DRIVER_NAME) \
+		GOOSE_DBSTRING="$(DB_CONTAINER_DSN)" \
+		goose -dir /migrations down'
+
+ping_local:
+	@echo "Checking /internal/health..."
+	@curl -i http://127.0.0.1:8080/internal/health
+	@echo ""
+	@echo "Checking /internal/info..."
+	@curl -i http://127.0.0.1:8080/internal/info
+
+go_app:
+	@echo "Running AP..."
+	@go run ./cmd/main.go
+
+check_container_db:
+	@echo "Checking Postgres container '$(DB_CONTAINER)'"
+	@docker exec $(DB_CONTAINER) \
+	pg_isready -U postgres -d $(DB_NAME) > NUL 2>&1 && \
+		(echo Postgres is available) || \
+		(echo Postgres is not available!)
+
+check_postgres_version:
+	@echo "Checking PostgreSQL version in container '$(DB_CONTAINER)'..."
+	@docker exec $(DB_CONTAINER) psql -U postgres -d postgres -c "SELECT version();"
+
+check_goose_version:
+	@echo "Checking Goose version in container '$(DB_CONTAINER)'..."
+	@docker exec $(DB_CONTAINER) goose --version || echo "Goose is not installed!"
+
+check_go_version:
+	@echo "Checking Go version in container '$(DB_CONTAINER)'..."
+	@docker exec $(DB_CONTAINER) go version || echo "Go is not installed!"
+
+check_curl_version:
+	@echo "Checking curl version in container '$(DB_CONTAINER)'..."
+	@docker exec -it $(DB_CONTAINER) sh -c 'curl --version'
+
+check_table:
+	@echo "Checking if '$(DB_TABLE_NAME_EM)' table exists in the database..."
+	@docker exec $(DB_CONTAINER) psql -U postgres -d $(DB_NAME) -tAc "\
+		SELECT CASE WHEN EXISTS ( \
+			SELECT 1 FROM information_schema.tables \
+			WHERE table_name='$(DB_TABLE_NAME_EM)' \
+		) THEN 'Table exists' ELSE 'Table does NOT exist' END;"
+
+ping_internal_docker:
+	@echo "Checking /internal/health..."
+	@docker exec -it $(DB_CONTAINER) curl -i http://127.0.0.1:8080/internal/health
+	@echo ""
+	@echo "Checking /internal/info..."
+	@docker exec -it $(DB_CONTAINER) curl -i http://127.0.0.1:8080/internal/info
+
+start:
+	@echo "=== Starting all ==="
+	@$(MAKE) dc_up
+	@$(MAKE) goose_up
+	@$(MAKE) check_table
+	@echo "=== All completed ==="
+
+down:
+	@echo "=== Stoping all ==="
+	@$(MAKE) goose_down
+	@$(MAKE) dc_down
+	@echo "=== All completed ==="
+
+building_app:
+	@$(MAKE) start_all
+	@$(MAKE) go_app
+	@$(MAKE) down_all
+
+run_tests:
+	@echo "Running in tests folder..."
+	@$(MAKE) -C tests building_test

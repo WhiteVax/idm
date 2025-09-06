@@ -3,14 +3,15 @@ package common
 import (
 	"errors"
 	"fmt"
+	"os"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
-	"os"
 )
 
-// Config общая конфигурация всего приложения
+// Config - общая конфигурация всего приложения
 type Config struct {
 	DbDriverName   string `validate:"required"`
 	Dsn            string `validate:"required"`
@@ -20,10 +21,9 @@ type Config struct {
 	LogDevelopMode bool
 }
 
-// GetConfig получение конфигурации из .env файла или переменных окружения
+// GetConfig - получение конфигурации из .env файла или переменных окружения
 func GetConfig(envFile string) Config {
 	var err = godotenv.Load(envFile)
-	// если нет файла, то залогируем это и попробуем получить конфиг из переменных окружения
 	if err != nil {
 		log.Info("Error loading .env file: %v\n", zap.Error(err))
 	}
