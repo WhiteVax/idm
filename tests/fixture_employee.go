@@ -28,7 +28,6 @@ func InitSchemaEmployee(r *employee.Repository) error {
 		"created_at"  TIMESTAMPTZ NOT NULL DEFAULT now(),
 		"updated_at"  TIMESTAMPTZ NOT NULL DEFAULT now()
 	);`
-	// Подключение к бд с созданием таблицы
 	_, err := r.DB().Exec(schema)
 	if err != nil {
 		return fmt.Errorf("InitSchema error: %w", err)

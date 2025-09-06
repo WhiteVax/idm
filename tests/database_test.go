@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// Проверка через Пинг соединения
+// TestConnectionWhenConnectionSuccessful - Проверка через Пинг соединения
 func TestConnectionWhenConnectionSuccessful(t *testing.T) {
 	os.Setenv("DB_DRIVER_NAME", "postgres")
 	os.Setenv("DB_DSN", "host=127.0.0.1 port=5440 user=postgres password=test_postgres dbname=postgres sslmode=disable")
@@ -33,7 +33,6 @@ func TestConnectionWhenWrongPassword(t *testing.T) {
 	defer os.Unsetenv("DB_DRIVER_NAME")
 	defer os.Unsetenv("DB_DSN")
 
-	// перед отловом Panic
 	defer func() {
 		if r := recover(); r == nil {
 			t.Error("Database Connection Not Present")
