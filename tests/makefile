@@ -18,6 +18,24 @@ check_container_test:
 		(echo Postgres is available) || \
 		(echo Postgres is not available!)
 
+check_goose_version_test:
+	@echo "Checking Goose version in container '$(DB_CONTAINER)'..."
+	@docker exec $(DB_CONTAINER) goose --version || echo "Goose is not installed!"
+
+goose_up_test:
+	@echo "Running Goose migrations in container '$(DB_CONTAINER)'..."
+	@docker exec $(DB_CONTAINER) sh -c '\
+		GOOSE_DRIVER=$(DB_DRIVER_NAME) \
+		GOOSE_DBSTRING="$(GOOSE_DBSTRING)" \
+		goose -dir . up'
+
+goose_down_test:
+	@echo "Running Goose rollback in container '$(DB_CONTAINER)'..."
+	@docker exec $(DB_CONTAINER) sh -c '\
+    		GOOSE_DRIVER=$(DB_DRIVER_NAME) \
+    		GOOSE_DBSTRING="$(GOOSE_DBSTRING)" \
+    		goose -dir . down'
+
 check_table_employee_test:
 	@echo "Checking if '$(DB_TABLE_NAME_EM)' table exists in the database..."
 	@docker exec $(DB_CONTAINER) psql -U postgres -d $(DB_NAME) -tAc "\
@@ -34,11 +52,14 @@ check_table_employee_test:
 
 go_test:
 	@echo "Running Go tests..."
-	@go test -v ./...
+	@go test -v -timeout 30s ./...
 
-building_test:
+container_run_test:
 	@$(MAKE) dc_up_test
 	@$(MAKE) check_container_test
+	@$(MAKE) goose_up_test
 	@$(MAKE) check_table_employee_test
-	@$(MAKE) go_test
+
+deleting_container_test:
+	@$(MAKE) goose_down_test
 	@$(MAKE) dc_down_test

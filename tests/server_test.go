@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -13,140 +14,46 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 )
 
-func EnsureEmployeeTable(db *employee.Repository) error {
-	return InitSchemaEmployee(db)
-}
-
-func TestEmployeePaginationIntegration(t *testing.T) {
-	a := assert.New(t)
+func SetupTestServer(t *testing.T) (*web.Server, *sqlx.DB) {
+	t.Helper()
 
 	cfg := common.GetConfig(".env")
-	db := database.ConnectDbWithCfg(cfg)
-	repo := employee.NewEmployeeRepository(db)
+	logger := common.NewLogger(cfg)
 
-	if err := EnsureEmployeeTable(repo); err != nil {
-		t.Fatal(err)
-	}
-
-	_, err := db.Exec(`TRUNCATE employee RESTART IDENTITY CASCADE`)
-	a.Nil(err)
-
-	for i := 1; i <= 5; i++ {
-		emp := employee.Entity{
-			Name:      fmt.Sprintf("Name%d", i),
-			Surname:   fmt.Sprintf("Surname%d", i),
-			Age:       int8(20 + i),
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		}
-		tx, err := repo.BeginTr()
-		a.Nil(err)
-		_, err = repo.Add(tx, emp)
-		a.Nil(err)
-		a.Nil(tx.Commit())
-	}
-
-	// Проверка записей через репозиторий
-	con, cancel := context.WithTimeout(context.Background(), 6*time.Second)
-	defer cancel()
-	em, err := repo.FindAll(con)
+	db := sqlx.MustConnect(cfg.DbDriverName, cfg.Dsn)
+	_, err := db.Exec("TRUNCATE employee RESTART IDENTITY CASCADE")
 	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Println(len(em))
-	for _, e := range em {
-		fmt.Println()
-		fmt.Println(e)
+		t.Fatalf("failed to truncate table: %v", err)
 	}
 
-	// Создаём сервер и контроллер
-	svc := employee.NewService(repo)
 	server := web.NewServer()
-	logger := &common.Logger{Logger: zap.NewNop()}
-	ctrl := employee.NewController(server, svc, logger)
-	ctrl.RegisterRoutes()
+	employeeRepo := employee.NewEmployeeRepository(db)
+	employeeService := employee.NewService(employeeRepo)
+	employeeHandler := employee.NewHandler(server, employeeService, logger)
+	employeeHandler.RegisterRoutes()
 
-	getPage := func(pageNumber, pageSize int) (*http.Response, employee.PageResponse) {
-		url := fmt.Sprintf("/api/v1/employees/page?page_number=%d&page_size=%d", pageNumber, pageSize)
-		req := httptest.NewRequest("GET", url, nil)
+	return server, db
+}
 
-		resp, err := server.App.Test(req)
-		a.Nil(err)
-
-		var pageResp employee.PageResponse
-		if resp.StatusCode == http.StatusOK {
-			err := json.NewDecoder(resp.Body).Decode(&pageResp)
-			a.Nil(err)
-		}
-		return resp, pageResp
+func CreateEmployee(t *testing.T, app *web.Server, name, surname string, age int8) {
+	req := employee.CreateRequest{
+		Name:      name,
+		Surname:   surname,
+		Age:       age,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
-
-	t.Run("Should use default values", func(t *testing.T) {
-		req := httptest.NewRequest(fiber.MethodGet, "/api/v1/employees/page", nil)
-		resp, err := server.App.Test(req)
-		a.Nil(err)
-
-		var pageResp employee.PageResponse
-		if resp.StatusCode == http.StatusOK {
-			err := json.NewDecoder(resp.Body).Decode(&pageResp)
-			a.Nil(err)
-			a.Equal(0, pageResp.PageNum)
-			a.Equal(10, pageResp.PageSize)
-			a.Equal(int64(5), pageResp.Total)
-			a.Len(pageResp.Result, 5)
-		}
-	})
-
-	t.Run("First page with size 3", func(t *testing.T) {
-		resp, pageResp := getPage(0, 3)
-		a.Equal(http.StatusOK, resp.StatusCode)
-		a.Len(pageResp.Result, 3)
-		a.Equal(0, pageResp.PageNum)
-		a.Equal(3, pageResp.PageSize)
-		a.Equal(int64(5), pageResp.Total)
-
-		req := httptest.NewRequest("GET", "/api/v1/employees/", nil)
-		resp, err := server.App.Test(req, int(200*time.Second))
-		a.Nil(err)
-		fmt.Println(resp.StatusCode)
-		fmt.Println(resp.Body)
-
-	})
-
-	t.Run("Second page with size 3", func(t *testing.T) {
-		resp, pageResp := getPage(1, 3)
-		a.Equal(http.StatusOK, resp.StatusCode)
-		a.Len(pageResp.Result, 2) // Осталось 2 записи
-		a.Equal(1, pageResp.PageNum)
-		a.Equal(3, pageResp.PageSize)
-	})
-
-	t.Run("Third page with size 3", func(t *testing.T) {
-		resp, pageResp := getPage(2, 3)
-		a.Equal(http.StatusOK, resp.StatusCode)
-		a.Len(pageResp.Result, 0) // Нет записей
-		a.Equal(2, pageResp.PageNum)
-	})
-
-	t.Run("Should return 400 for invalid parameters", func(t *testing.T) {
-		req := httptest.NewRequest(fiber.MethodGet, "/api/v1/employees/page?page_size=-1&page_number=0", nil)
-		resp, err := server.App.Test(req)
-		a.Nil(err)
-		a.Equal(http.StatusBadRequest, resp.StatusCode)
-	})
-
-	t.Run("Should return 400 for pageSize too large", func(t *testing.T) {
-		req := httptest.NewRequest(fiber.MethodGet, "/api/v1/employees/page?page_size=150&page_number=0", nil)
-		resp, err := server.App.Test(req)
-		a.Nil(err)
-		a.Equal(http.StatusBadRequest, resp.StatusCode)
-	})
+	a := assert.New(t)
+	body, _ := json.Marshal(req)
+	reqHTTP := httptest.NewRequest(http.MethodPost, "/api/v1/employees", bytes.NewReader(body))
+	reqHTTP.Header.Set("Content-Type", "application/json")
+	resp, _ := app.App.Test(reqHTTP)
+	a.Equal(http.StatusOK, resp.StatusCode)
 }
 
 func TestServiceNilCheck(t *testing.T) {
@@ -157,10 +64,10 @@ func TestServiceNilCheck(t *testing.T) {
 	defer db.Close()
 
 	repo := employee.NewEmployeeRepository(db)
-	a.NotNil(repo, "Repository should not be nil")
+	a.NotNil(repo)
 
 	svc := employee.NewService(repo)
-	a.NotNil(svc, "Service should not be nil")
+	a.NotNil(svc)
 
 	ctx := context.Background()
 	req := employee.PageRequest{PageSize: 10, PageNumber: 0}
@@ -172,4 +79,119 @@ func TestServiceNilCheck(t *testing.T) {
 	} else {
 		t.Logf("Service result: %+v", result)
 	}
+}
+
+func TestIntegrationAddEmployee(t *testing.T) {
+	a := assert.New(t)
+	server, db := SetupTestServer(t)
+	defer db.Close()
+
+	newEmployee := employee.Entity{
+		Name:      "John",
+		Surname:   "Doe",
+		Age:       30,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	body, _ := json.Marshal(newEmployee)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/employees/add", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := server.App.Test(req, -1)
+	a.NoError(err)
+	a.Equal(http.StatusOK, resp.StatusCode)
+
+	var count int
+	err = db.Get(&count, "SELECT COUNT(*) FROM employee WHERE name=$1 AND surname=$2", newEmployee.Name, newEmployee.Surname)
+	a.NoError(err)
+	var respBody map[string]interface{}
+	_ = json.NewDecoder(resp.Body).Decode(&respBody)
+	data := respBody["data"].(map[string]interface{})
+	a.Equal(1, int(data["id"].(float64)))
+	a.Equal("John", data["name"])
+}
+
+func TestEmployeePagination(t *testing.T) {
+	a := assert.New(t)
+	app, _ := SetupTestServer(t)
+
+	for i := 1; i <= 5; i++ {
+		CreateEmployee(t, app, fmt.Sprintf("Name_%d", i), fmt.Sprintf("Surname_%d", i), 20+int8(i))
+	}
+
+	t.Run("First page with 3 entries - 3", func(t *testing.T) {
+		t.Parallel()
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/page?page_number=0&page_size=3", nil)
+		resp, _ := app.App.Test(req)
+
+		a.Equal(http.StatusOK, resp.StatusCode)
+
+		var pageResp employee.EntityPageResponse
+		_ = json.NewDecoder(resp.Body).Decode(&pageResp)
+
+		fmt.Println(pageResp.Data.Result)
+
+		a.Len(pageResp.Data.Result, 3)
+		a.Equal(int64(5), pageResp.Data.Total)
+		a.True(pageResp.Success)
+	})
+
+	t.Run("Second page with 2 entries - 2", func(t *testing.T) {
+		t.Parallel()
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/page?page_number=1&page_size=3", nil)
+		resp, _ := app.App.Test(req)
+
+		a.Equal(http.StatusOK, resp.StatusCode)
+
+		var pageResp employee.EntityPageResponse
+		_ = json.NewDecoder(resp.Body).Decode(&pageResp)
+		a.Len(pageResp.Data.Result, 2)
+	})
+
+	t.Run("Third page with 3 entries - 0", func(t *testing.T) {
+		t.Parallel()
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/page?page_number=2&page_size=3", nil)
+		resp, _ := app.App.Test(req)
+
+		a.Equal(http.StatusOK, resp.StatusCode)
+
+		var pageResp employee.EntityPageResponse
+		_ = json.NewDecoder(resp.Body).Decode(&pageResp)
+		a.Len(pageResp.Data.Result, 0)
+	})
+	t.Run("Invalid web request", func(t *testing.T) {
+		t.Parallel()
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/page?page_number=abc&page_size=xyz", nil)
+		resp, _ := app.App.Test(req)
+		var pageResp employee.EntityPageResponse
+		_ = json.NewDecoder(resp.Body).Decode(&pageResp)
+
+		a.Equal(http.StatusBadRequest, resp.StatusCode)
+		a.False(pageResp.Success)
+		a.Nil(pageResp.Data.Result)
+	})
+
+	t.Run("Without instructions Page_number", func(t *testing.T) {
+		t.Parallel()
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/page?page_size=3", nil)
+		resp, _ := app.App.Test(req)
+
+		a.Equal(http.StatusOK, resp.StatusCode)
+
+		var pageResp employee.EntityPageResponse
+		_ = json.NewDecoder(resp.Body).Decode(&pageResp)
+		a.Len(pageResp.Data.Result, 3)
+	})
+
+	t.Run("Without instructions PageSize", func(t *testing.T) {
+		t.Parallel()
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/page?page_number=0", nil)
+		resp, _ := app.App.Test(req)
+		var pageResp employee.EntityPageResponse
+		_ = json.NewDecoder(resp.Body).Decode(&pageResp)
+
+		a.Equal(http.StatusBadRequest, resp.StatusCode)
+		a.False(pageResp.Success)
+	})
 }

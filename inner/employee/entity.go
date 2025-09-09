@@ -58,3 +58,9 @@ type PageResponse struct {
 	PageNum  int        `json:"page_num" query:"page_num"`
 	Total    int64      `json:"total" query:"total"`
 }
+
+type EntityPageResponse struct {
+	Success bool         `json:"success"`
+	Error   string       `json:"error"`
+	Data    PageResponse `json:"data"`
+}

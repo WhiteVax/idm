@@ -68,31 +68,19 @@ check_table:
 			WHERE table_name='$(DB_TABLE_NAME_EM)' \
 		) THEN 'Table exists' ELSE 'Table does NOT exist' END;"
 
-ping_internal_docker:
-	@echo "Checking /internal/health..."
-	@docker exec -it $(DB_CONTAINER) curl -i http://127.0.0.1:8080/internal/health
-	@echo ""
-	@echo "Checking /internal/info..."
-	@docker exec -it $(DB_CONTAINER) curl -i http://127.0.0.1:8080/internal/info
-
-start:
-	@echo "=== Starting all ==="
+building_app:
 	@$(MAKE) dc_up
+	@$(MAKE) check_container_db
 	@$(MAKE) goose_up
-	@$(MAKE) check_table
-	@echo "=== All completed ==="
+	@$(MAKE) go_app
 
-down:
-	@echo "=== Stoping all ==="
+checking:
+	@$(MAKE) check_container_db
+	@$(MAKE) check_postgres_version
+	@$(MAKE) check_goose_version
+	@$(MAKE) check_table
+	@$(MAKE) ping_local
+
+delete_app:
 	@$(MAKE) goose_down
 	@$(MAKE) dc_down
-	@echo "=== All completed ==="
-
-building_app:
-	@$(MAKE) start_all
-	@$(MAKE) go_app
-	@$(MAKE) down_all
-
-run_tests:
-	@echo "Running in tests folder..."
-	@$(MAKE) -C tests building_test
