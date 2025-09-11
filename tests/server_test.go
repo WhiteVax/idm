@@ -206,5 +206,7 @@ func TestEmployeePagination(t *testing.T) {
 		a.Equal(http.StatusOK, resp.StatusCode)
 		a.True(pageResp.Success)
 		a.Equal("super_", pageResp.Data.TextFilter)
+		a.Equal(int64(0), pageResp.Data.Total)
+		a.Equal([]employee.Response{}, pageResp.Data.Result)
 	})
 }
