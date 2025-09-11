@@ -23,7 +23,7 @@ type Repo interface {
 	DeleteBySliceIds(ids []int64) ([]int64, error)
 	BeginTr() (*sqlx.Tx, error)
 	FindByNameAndSurname(tx *sqlx.Tx, name, surname string) (isExists bool, err error)
-	FindAllWithLimitOffset(ctx context.Context, limit int64, offset int64) (employees []Entity, total int64, err error)
+	FindWithLimitOffsetAndFilter(ctx context.Context, limit int64, offset int64, filter string) (employees []Entity, total int64, err error)
 }
 
 type Validator interface {
@@ -212,7 +212,7 @@ func (svc *Service) FindAllWithLimitOffset(ctx context.Context, req PageRequest)
 	}
 	limit := req.PageSize
 	offset := req.PageNumber * req.PageSize
-	entities, total, err := svc.repo.FindAllWithLimitOffset(ctx, int64(limit), int64(offset))
+	entities, total, err := svc.repo.FindWithLimitOffsetAndFilter(ctx, int64(limit), int64(offset), req.TextFilter)
 	if err != nil {
 		return PageResponse{}, fmt.Errorf("Error finding employees with limit/offset: %w", err)
 	}
@@ -222,9 +222,10 @@ func (svc *Service) FindAllWithLimitOffset(ctx context.Context, req PageRequest)
 		resp = append(resp, e.ToResponse())
 	}
 	return PageResponse{
-		Result:   resp,
-		PageSize: req.PageSize,
-		PageNum:  req.PageNumber,
-		Total:    total,
+		Result:     resp,
+		PageSize:   req.PageSize,
+		PageNum:    req.PageNumber,
+		Total:      total,
+		TextFilter: req.TextFilter,
 	}, nil
 }

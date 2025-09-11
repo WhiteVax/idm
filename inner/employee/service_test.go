@@ -63,8 +63,8 @@ func (m *MockEmployeeRepo) FindBySliceIds(ids []int64) ([]Entity, error) {
 	return args.Get(0).([]Entity), args.Error(1)
 }
 
-func (m *MockEmployeeRepo) FindAllWithLimitOffset(ctx context.Context, limit int64, offset int64) (employees []Entity, total int64, err error) {
-	args := m.Called(ctx, limit, offset)
+func (m *MockEmployeeRepo) FindWithLimitOffsetAndFilter(ctx context.Context, limit int64, offset int64, filter string) (employees []Entity, total int64, err error) {
+	args := m.Called(ctx, limit, offset, filter)
 	return args.Get(0).([]Entity), args.Get(1).(int64), args.Error(2)
 }
 

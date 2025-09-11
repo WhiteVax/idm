@@ -121,8 +121,8 @@ func TestEmployeePagination(t *testing.T) {
 	}
 
 	t.Run("First page with 3 entries - 3", func(t *testing.T) {
-		t.Parallel()
-		req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/page?page_number=0&page_size=3", nil)
+		req := httptest.NewRequest(http.MethodGet,
+			"/api/v1/employees/page?page_number=0&page_size=3&text_filter=name_", nil)
 		resp, _ := app.App.Test(req)
 
 		a.Equal(http.StatusOK, resp.StatusCode)
@@ -193,5 +193,18 @@ func TestEmployeePagination(t *testing.T) {
 
 		a.Equal(http.StatusBadRequest, resp.StatusCode)
 		a.False(pageResp.Success)
+	})
+
+	t.Run("With text filter witch not found in database", func(t *testing.T) {
+		t.Parallel()
+		req := httptest.NewRequest(http.MethodGet,
+			"/api/v1/employees/page?page_number=0&page_size=3&text_filter=super_", nil)
+		resp, _ := app.App.Test(req)
+		var pageResp employee.EntityPageResponse
+		_ = json.NewDecoder(resp.Body).Decode(&pageResp)
+
+		a.Equal(http.StatusOK, resp.StatusCode)
+		a.True(pageResp.Success)
+		a.Equal("super_", pageResp.Data.TextFilter)
 	})
 }
