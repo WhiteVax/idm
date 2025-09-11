@@ -517,12 +517,13 @@ func TestFindAllEmployeesWithLimitOffset(t *testing.T) {
 		handler := NewHandler(server, svc, &common.Logger{Logger: zap.NewNop()})
 		handler.RegisterRoutes()
 		expectedResponse := PageResponse{
-			Result:   []Response{{Id: 1, Name: "John"}},
-			PageSize: 10,
-			PageNum:  0,
-			Total:    100,
+			Result:     []Response{{Id: 1, Name: "John"}},
+			TextFilter: "",
+			PageSize:   10,
+			PageNum:    0,
+			Total:      100,
 		}
-		svc.On("FindWithLimitOffsetAndFilter",
+		svc.On("FindAllWithLimitOffset",
 			mock.Anything,
 			mock.MatchedBy(func(req PageRequest) bool {
 				return req.PageNumber == 0 && req.PageSize == 10
@@ -590,7 +591,7 @@ func TestFindAllEmployeesWithLimitOffset(t *testing.T) {
 		handler := NewHandler(server, svc, &common.Logger{Logger: zap.NewNop()})
 		handler.RegisterRoutes()
 
-		svc.On("FindWithLimitOffsetAndFilter",
+		svc.On("FindAllWithLimitOffset",
 			mock.Anything,
 			mock.MatchedBy(func(req PageRequest) bool {
 				return req.PageNumber == 1 && req.PageSize == 3
@@ -621,7 +622,7 @@ func TestFindAllEmployeesWithLimitOffset(t *testing.T) {
 		handler := NewHandler(server, svc, &common.Logger{Logger: zap.NewNop()})
 		handler.RegisterRoutes()
 
-		svc.On("FindWithLimitOffsetAndFilter",
+		svc.On("FindAllWithLimitOffset",
 			mock.Anything,
 			mock.MatchedBy(func(req PageRequest) bool {
 				return req.PageNumber == 1 && req.PageSize == 3
