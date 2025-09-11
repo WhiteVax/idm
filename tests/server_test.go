@@ -209,4 +209,19 @@ func TestEmployeePagination(t *testing.T) {
 		a.Equal(int64(0), pageResp.Data.Total)
 		a.Equal([]employee.Response{}, pageResp.Data.Result)
 	})
+
+	t.Run("With text filter witch less string len 3", func(t *testing.T) {
+		t.Parallel()
+		req := httptest.NewRequest(http.MethodGet,
+			"/api/v1/employees/page?page_number=0&page_size=5&text_filter=na", nil)
+		resp, _ := app.App.Test(req)
+		var pageResp employee.EntityPageResponse
+		_ = json.NewDecoder(resp.Body).Decode(&pageResp)
+
+		a.Equal(http.StatusOK, resp.StatusCode)
+		a.True(pageResp.Success)
+		a.Equal("na", pageResp.Data.TextFilter)
+		a.Equal(int64(5), pageResp.Data.Total)
+		a.Equal(5, len(pageResp.Data.Result))
+	})
 }
