@@ -11,7 +11,6 @@ type Logger struct {
 	*zap.Logger
 }
 
-// NewLogger функция-конструктор логгера
 func NewLogger(cfg Config) *Logger {
 	var zapEncoderCfg = zapcore.EncoderConfig{
 		TimeKey:          "timestamp",
@@ -35,10 +34,8 @@ func NewLogger(cfg Config) *Logger {
 			Initial:    100,
 			Thereafter: 100,
 		},
-		// пишем записи в формате JSON
-		Encoding:      "json",
-		EncoderConfig: zapEncoderCfg,
-		// логируем сообщения и ошибки в консоль
+		Encoding:         "json",
+		EncoderConfig:    zapEncoderCfg,
 		OutputPaths:      []string{"stdout"},
 		ErrorOutputPaths: []string{"stdout"},
 	}
@@ -49,7 +46,7 @@ func NewLogger(cfg Config) *Logger {
 	return created
 }
 
-// setNewFiberZapLogger устанавливает логгер для fiber
+// setNewFiberZapLogger - устанавливает логгер для fiber
 func (l *Logger) setNewFiberZapLogger() {
 	var fiberzapLogger = fiberzap.NewLogger(fiberzap.LoggerConfig{
 		SetLogger: l.Logger,
@@ -57,7 +54,7 @@ func (l *Logger) setNewFiberZapLogger() {
 	log.SetLogger(fiberzapLogger)
 }
 
-// parseLogLevel парсит уровень логирования из строки в zapcore.Level
+// parseLogLevel - парсит уровень логирования из строки в zapcore.Level
 func parseLogLevel(level string) zapcore.Level {
 	switch level {
 	case "debug", "DEBUG":

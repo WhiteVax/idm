@@ -1,14 +1,16 @@
 package web
 
 import (
-	"github.com/gofiber/fiber/v2"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewServerMiddleware(t *testing.T) {
 	t.Run("Server panic", func(t *testing.T) {
+		t.Parallel()
 		a := assert.New(t)
 		server := NewServer()
 		server.App.Get("/panic", func(c *fiber.Ctx) error {
@@ -22,6 +24,7 @@ func TestNewServerMiddleware(t *testing.T) {
 	})
 
 	t.Run("RequestId", func(t *testing.T) {
+		t.Parallel()
 		a := assert.New(t)
 		server := NewServer()
 		server.App.Get("/id", func(c *fiber.Ctx) error {

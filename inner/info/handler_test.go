@@ -1,17 +1,18 @@
 package info
 
 import (
+	"idm/inner/common"
+	"idm/inner/web"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"
-	"idm/inner/common"
-	"idm/inner/web"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 type MockDb struct {
@@ -48,7 +49,7 @@ func TestGetInfo(t *testing.T) {
 			AppName:    "test",
 			AppVersion: "1.0.0",
 		}
-		ctrl := NewController(server, cfg, nil, logger)
+		ctrl := NewHandler(server, cfg, nil, logger)
 		ctrl.RegisterRoutes()
 		req := httptest.NewRequest(http.MethodGet, "/internal/info", nil)
 		resp, err := app.Test(req)
@@ -63,6 +64,7 @@ func TestGetHealth(t *testing.T) {
 		Logger: zap.NewNop(),
 	}
 	t.Run("Get health with status 200", func(t *testing.T) {
+		t.Parallel()
 		app := fiber.New()
 		server := &web.Server{
 			App:           app,
@@ -75,7 +77,7 @@ func TestGetHealth(t *testing.T) {
 		mockDb, _, err := sqlmock.New()
 		a.Nil(err)
 		sqlxDB := sqlx.NewDb(mockDb, "sqlmock")
-		ctrl := NewController(server, cfg, sqlxDB, logger)
+		ctrl := NewHandler(server, cfg, sqlxDB, logger)
 		ctrl.RegisterRoutes()
 		req := httptest.NewRequest(http.MethodGet, "/internal/health", nil)
 		resp, err := app.Test(req)
@@ -84,6 +86,7 @@ func TestGetHealth(t *testing.T) {
 	})
 
 	t.Run("Get health with status 500", func(t *testing.T) {
+		t.Parallel()
 		app := fiber.New()
 		server := &web.Server{
 			App:           app,
@@ -97,7 +100,7 @@ func TestGetHealth(t *testing.T) {
 		a.Nil(err)
 		mockDb.Close()
 		sqlxDB := sqlx.NewDb(mockDb, "sqlmock")
-		ctrl := NewController(server, cfg, sqlxDB, logger)
+		ctrl := NewHandler(server, cfg, sqlxDB, logger)
 		ctrl.RegisterRoutes()
 		req := httptest.NewRequest(http.MethodGet, "/internal/health", nil)
 		resp, err := app.Test(req)

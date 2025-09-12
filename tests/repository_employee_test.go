@@ -2,11 +2,12 @@ package tests
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
 	"idm/inner/database"
 	"idm/inner/employee"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRepositoryEmployee(t *testing.T) {
@@ -24,6 +25,10 @@ func TestRepositoryEmployee(t *testing.T) {
 		}
 	}()
 	var employeeRepository = employee.NewEmployeeRepository(db)
+	err := InitSchemaEmployee(employeeRepository)
+	if err != nil {
+		return
+	}
 	var fixture = NewFixtureEmployee(employeeRepository)
 
 	t.Run("Find an employee by id", func(t *testing.T) {
@@ -167,12 +172,14 @@ func TestEmployeeRepositoryWhenDeleteById(t *testing.T) {
 	id := fixture.Employee("Deleted", "Sara", 30, time.Now(), time.Now())
 
 	t.Run("Deleting existing employee by ID", func(t *testing.T) {
+		t.Parallel()
 		got, err := repo.DeleteById(id)
 		a.NoError(err)
 		a.True(got)
 	})
 
 	t.Run("Deleting when false", func(t *testing.T) {
+		t.Parallel()
 		deleted, err := repo.DeleteById(912384)
 		a.NoError(err)
 		a.False(deleted)
@@ -194,6 +201,7 @@ func TestEmployeeRepositoryWhenDeleteByIds(t *testing.T) {
 	id2 := fixture.Employee("Deleted2", "Sara", 30, time.Now(), time.Now())
 	fixture.Employee("Conor", "Sara", 30, time.Now(), time.Now())
 	t.Run("Deleting when correct", func(t *testing.T) {
+		t.Parallel()
 		ids := []int64{id1, id2}
 		got, err := repo.DeleteBySliceIds(ids)
 		a.NoError(err)
@@ -201,6 +209,7 @@ func TestEmployeeRepositoryWhenDeleteByIds(t *testing.T) {
 	})
 
 	t.Run("Test deleted ids and finding one employee", func(t *testing.T) {
+		t.Parallel()
 		got, err := repo.FindAll(context.Background())
 		a.NoError(err)
 		a.Len(got, 1)

@@ -1,11 +1,12 @@
 package tests
 
 import (
-	"github.com/stretchr/testify/assert"
 	"idm/inner/database"
 	"idm/inner/role"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRepositoryRole(t *testing.T) {
@@ -101,12 +102,14 @@ func TestRoleRepositoryWhenDeleteById(t *testing.T) {
 	id := fixture.Role("Guest", time.Now(), time.Now())
 
 	t.Run("Deleting existing role by ID", func(t *testing.T) {
+		t.Parallel()
 		got, err := repo.DeleteById(id)
 		a.NoError(err)
 		a.True(got)
 	})
 
 	t.Run("Deleting when false", func(t *testing.T) {
+		t.Parallel()
 		deleted, err := repo.DeleteById(912384)
 		a.NoError(err)
 		a.False(deleted)

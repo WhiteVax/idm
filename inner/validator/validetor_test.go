@@ -2,11 +2,12 @@ package validator
 
 import (
 	"errors"
-	"github.com/go-playground/validator/v10"
-	"github.com/stretchr/testify/assert"
 	"idm/inner/employee"
 	"testing"
 	"time"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/stretchr/testify/assert"
 )
 
 func AssertValidationField(t *testing.T, err error, expectedField string) {
@@ -35,11 +36,13 @@ func TestCreateRequest(t *testing.T) {
 	}
 
 	t.Run("Valid request", func(t *testing.T) {
+		t.Parallel()
 		err := v.Struct(validRequest)
 		assert.Nil(t, err)
 	})
 
 	t.Run("Empty name", func(t *testing.T) {
+		t.Parallel()
 		req := validRequest
 		req.Name = ""
 		err := v.Struct(req)
@@ -48,6 +51,7 @@ func TestCreateRequest(t *testing.T) {
 	})
 
 	t.Run("Too short name", func(t *testing.T) {
+		t.Parallel()
 		req := validRequest
 		req.Name = "E"
 		err := v.Struct(req)
@@ -56,6 +60,7 @@ func TestCreateRequest(t *testing.T) {
 	})
 
 	t.Run("Empty surname", func(t *testing.T) {
+		t.Parallel()
 		req := validRequest
 		req.Surname = ""
 		err := v.Struct(req)
@@ -64,6 +69,7 @@ func TestCreateRequest(t *testing.T) {
 	})
 
 	t.Run("Too short surname", func(t *testing.T) {
+		t.Parallel()
 		req := validRequest
 		req.Surname = "J"
 		err := v.Struct(req)
@@ -72,6 +78,7 @@ func TestCreateRequest(t *testing.T) {
 	})
 
 	t.Run("Age is too young", func(t *testing.T) {
+		t.Parallel()
 		req := validRequest
 		req.Age = 14
 		err := v.Struct(req)
@@ -80,6 +87,7 @@ func TestCreateRequest(t *testing.T) {
 	})
 
 	t.Run("Empty created data", func(t *testing.T) {
+		t.Parallel()
 		req :=
 			employee.CreateRequest{
 				Name:      "John",
@@ -92,6 +100,7 @@ func TestCreateRequest(t *testing.T) {
 	})
 
 	t.Run("Empty updated data", func(t *testing.T) {
+		t.Parallel()
 		req :=
 			employee.CreateRequest{
 				Name:      "John",
@@ -101,5 +110,48 @@ func TestCreateRequest(t *testing.T) {
 		err := v.Struct(req)
 		assert.NotNil(t, err)
 		AssertValidationField(t, err, "UpdatedAt")
+	})
+}
+
+func TestPageRequest(t *testing.T) {
+	v := validator.New()
+	validRequest := employee.PageRequest{
+		PageSize:   10,
+		PageNumber: 5,
+	}
+	t.Run("Valid request", func(t *testing.T) {
+		t.Parallel()
+		err := v.Struct(validRequest)
+		assert.Nil(t, err)
+	})
+	t.Run("Page size < 1", func(t *testing.T) {
+		t.Parallel()
+		req := employee.PageRequest{
+			PageSize:   0,
+			PageNumber: 5,
+		}
+		err := v.Struct(req)
+		assert.NotNil(t, err)
+		AssertValidationField(t, err, "PageSize")
+	})
+	t.Run("Page size > 100", func(t *testing.T) {
+		t.Parallel()
+		req := employee.PageRequest{
+			PageSize:   101,
+			PageNumber: 5,
+		}
+		err := v.Struct(req)
+		assert.NotNil(t, err)
+		AssertValidationField(t, err, "PageSize")
+	})
+	t.Run("Page number < 0", func(t *testing.T) {
+		t.Parallel()
+		req := employee.PageRequest{
+			PageSize:   4,
+			PageNumber: -1,
+		}
+		err := v.Struct(req)
+		assert.NotNil(t, err)
+		AssertValidationField(t, err, "PageNumber")
 	})
 }

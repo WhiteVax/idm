@@ -2,10 +2,11 @@ package role
 
 import (
 	"errors"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 type MockRoleRepo struct {
@@ -44,6 +45,7 @@ func (m *MockRoleRepo) FindBySliceIds(ids []int64) ([]Entity, error) {
 
 func TestFindByIdRole(t *testing.T) {
 	t.Run("Should return found role", func(t *testing.T) {
+		t.Parallel()
 		a := assert.New(t)
 		repo := new(MockRoleRepo)
 		svc := NewService(repo)
@@ -62,6 +64,7 @@ func TestFindByIdRole(t *testing.T) {
 	})
 
 	t.Run("Should return error if id <= 0", func(t *testing.T) {
+		t.Parallel()
 		a := assert.New(t)
 
 		repo := new(MockRoleRepo)
@@ -80,6 +83,7 @@ func TestAddRole(t *testing.T) {
 	svc := NewService(repo)
 
 	t.Run("Should add role", func(t *testing.T) {
+		t.Parallel()
 		entity := Entity{
 			Id:        1,
 			Name:      "Admin",
@@ -103,6 +107,7 @@ func TestAddRole(t *testing.T) {
 	})
 
 	t.Run("Should return error if any role field is empty", func(t *testing.T) {
+		t.Parallel()
 		entity := Entity{
 			Id:        0,
 			Name:      "",
@@ -132,6 +137,7 @@ func TestDeleteByIdRole(t *testing.T) {
 	repo := new(MockRoleRepo)
 	svc := NewService(repo)
 	t.Run("Should delete role", func(t *testing.T) {
+		t.Parallel()
 		repo.On("DeleteById", int64(1)).Return(true, nil)
 		got, err := svc.DeleteById(1)
 		a.Nil(err)
@@ -139,6 +145,7 @@ func TestDeleteByIdRole(t *testing.T) {
 	})
 
 	t.Run("Should return error if id <= 0", func(t *testing.T) {
+		t.Parallel()
 		repo.On("DeleteById", int64(0)).Return(false, errors.New("Wrong id: 1"))
 		got, err := svc.DeleteById(0)
 		a.Equal(Response{}, got)
@@ -146,6 +153,7 @@ func TestDeleteByIdRole(t *testing.T) {
 	})
 
 	t.Run("Should return error if any role field is empty", func(t *testing.T) {
+		t.Parallel()
 		repo.On("DeleteById", int64(5)).Return(false, errors.New("Error deleting role with id"))
 		got, err := svc.DeleteById(5)
 		a.Equal(Response{}, got)
@@ -155,6 +163,7 @@ func TestDeleteByIdRole(t *testing.T) {
 
 func TestFindByIdsRoles(t *testing.T) {
 	t.Run("Should return finding roles", func(t *testing.T) {
+		t.Parallel()
 		a := assert.New(t)
 		mockRepo := new(MockRoleRepo)
 		svc := NewService(mockRepo)
@@ -175,6 +184,7 @@ func TestFindByIdsRoles(t *testing.T) {
 	})
 
 	t.Run("Should return error if empty ids", func(t *testing.T) {
+		t.Parallel()
 		a := assert.New(t)
 		mockRepo := new(MockRoleRepo)
 		svc := NewService(mockRepo)
@@ -189,6 +199,7 @@ func TestDeleteByIdsRoles(t *testing.T) {
 	mockRepo := new(MockRoleRepo)
 	svc := NewService(mockRepo)
 	t.Run("Should delete role", func(t *testing.T) {
+		t.Parallel()
 		ids := []int64{1, 2}
 		mockRepo.On("DeleteBySliceIds", ids).Return(ids, nil)
 		got, err := svc.DeleteByIds(ids)
@@ -198,6 +209,7 @@ func TestDeleteByIdsRoles(t *testing.T) {
 	})
 
 	t.Run("Should return error if ids is empty", func(t *testing.T) {
+		t.Parallel()
 		var ids []int64
 		mockRepo.On("DeleteBySliceIds", ids).Return(nil, errors.New("Wrong ids"))
 		got, err := svc.DeleteByIds(ids)

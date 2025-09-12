@@ -1,0 +1,27 @@
+FROM postgres:17
+
+# Устанавливаем зависимости включая curl
+RUN apt-get update && apt-get install -y \
+    wget \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Устанавливаем Go
+ENV GOLANG_VERSION=1.25.1
+ARG TARGETARCH
+RUN wget -O go.tar.gz https://go.dev/dl/go${GOLANG_VERSION}.linux-${TARGETARCH}.tar.gz \
+    && tar -C /usr/local -xzf go.tar.gz \
+    && rm go.tar.gz
+
+# Добавляем Go в PATH
+ENV PATH=$PATH:/usr/local/go/bin
+
+# Устанавливаем Goose из исходников для правильной архитектуры
+ENV GOOS=linux
+ENV GOARCH=${TARGETARCH}
+RUN go install github.com/pressly/goose/v3/cmd/goose@latest \
+    && mv /root/go/bin/goose /usr/local/bin/goose \
+    && chmod +x /usr/local/bin/goose
+    
+# Устанавливаем рабочую директорию
+WORKDIR /migrations

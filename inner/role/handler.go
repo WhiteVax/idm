@@ -2,14 +2,15 @@ package role
 
 import (
 	"encoding/json"
-	"github.com/gofiber/fiber/v2"
-	"go.uber.org/zap"
 	"idm/inner/common"
 	"idm/inner/web"
 	"strconv"
+
+	"github.com/gofiber/fiber/v2"
+	"go.uber.org/zap"
 )
 
-type Controller struct {
+type Handler struct {
 	server  *web.Server
 	service Svc
 	logger  *common.Logger
@@ -24,15 +25,15 @@ type Svc interface {
 	FindAll() (roles []Entity, err error)
 }
 
-func NewController(server *web.Server, roleService Svc, logger *common.Logger) *Controller {
-	return &Controller{
+func NewHandler(server *web.Server, roleService Svc, logger *common.Logger) *Handler {
+	return &Handler{
 		server:  server,
 		service: roleService,
 		logger:  logger,
 	}
 }
 
-func (c *Controller) RegisterRouters() {
+func (c *Handler) RegisterRouters() {
 	c.server.GroupApiV1.Post("/roles/add", c.AddRoles)
 	c.server.GroupApiV1.Post("/roles/ids", c.FindByIds)
 	c.server.GroupApiV1.Post("/roles/:id", c.FindById)
@@ -41,7 +42,7 @@ func (c *Controller) RegisterRouters() {
 	c.server.GroupApiV1.Get("/roles", c.FindAll)
 }
 
-func (c *Controller) AddRoles(ctx *fiber.Ctx) error {
+func (c *Handler) AddRoles(ctx *fiber.Ctx) error {
 	var entity Entity
 	if err := ctx.BodyParser(&entity); err != nil {
 		c.logger.Error("AddRoles: invalid request body", zap.Error(err))
@@ -58,7 +59,7 @@ func (c *Controller) AddRoles(ctx *fiber.Ctx) error {
 	return common.OkResponse(ctx, newRoleId)
 }
 
-func (c *Controller) FindById(ctx *fiber.Ctx) error {
+func (c *Handler) FindById(ctx *fiber.Ctx) error {
 	idParam := ctx.Params("id")
 	id, err := strconv.ParseInt(idParam, 10, 64)
 	if err != nil {
@@ -74,7 +75,7 @@ func (c *Controller) FindById(ctx *fiber.Ctx) error {
 	return common.OkResponse(ctx, employee)
 }
 
-func (c *Controller) FindByIds(ctx *fiber.Ctx) error {
+func (c *Handler) FindByIds(ctx *fiber.Ctx) error {
 	var ids []int64
 	if err := ctx.BodyParser(&ids); err != nil {
 		c.logger.Error("FindByIds: invalid request body", zap.Error(err))
@@ -89,7 +90,7 @@ func (c *Controller) FindByIds(ctx *fiber.Ctx) error {
 	return common.OkResponse(ctx, roles)
 }
 
-func (c *Controller) DeleteById(ctx *fiber.Ctx) error {
+func (c *Handler) DeleteById(ctx *fiber.Ctx) error {
 	idParam := ctx.Params("id")
 	id, err := strconv.ParseInt(idParam, 10, 64)
 	if err != nil {
@@ -105,7 +106,7 @@ func (c *Controller) DeleteById(ctx *fiber.Ctx) error {
 	return common.OkResponse(ctx, rsl)
 }
 
-func (c *Controller) DeleteByIds(ctx *fiber.Ctx) error {
+func (c *Handler) DeleteByIds(ctx *fiber.Ctx) error {
 	bodyBytes := ctx.Body()
 	var ids []int64
 	if err := json.Unmarshal(bodyBytes, &ids); err != nil {
@@ -121,7 +122,7 @@ func (c *Controller) DeleteByIds(ctx *fiber.Ctx) error {
 	return common.OkResponse(ctx, rsl)
 }
 
-func (c *Controller) FindAll(ctx *fiber.Ctx) error {
+func (c *Handler) FindAll(ctx *fiber.Ctx) error {
 	roles, err := c.service.FindAll()
 	if err != nil {
 		c.logger.Error("FindAll: error finding roles", zap.Error(err))

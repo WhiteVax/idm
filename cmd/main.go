@@ -2,19 +2,19 @@ package main
 
 import (
 	"context"
-	"github.com/jmoiron/sqlx"
-	"go.uber.org/zap"
 	"idm/inner/common"
 	database2 "idm/inner/database"
 	"idm/inner/employee"
 	"idm/inner/info"
 	"idm/inner/role"
-	"idm/inner/validator"
 	"idm/inner/web"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/jmoiron/sqlx"
+	"go.uber.org/zap"
 )
 
 func main() {
@@ -61,15 +61,14 @@ func build(database *sqlx.DB, logger *common.Logger) *web.Server {
 	var cfg = common.GetConfig(".env")
 	var server = web.NewServer()
 	var employeeRepo = employee.NewEmployeeRepository(database)
-	var vld = validator.New()
-	var employeeService = employee.NewService(employeeRepo, vld)
-	var employeeController = employee.NewController(server, employeeService, logger)
-	employeeController.RegisterRoutes()
+	var employeeService = employee.NewService(employeeRepo)
+	var employeeHandler = employee.NewHandler(server, employeeService, logger)
+	employeeHandler.RegisterRoutes()
 	var roleRepo = role.NewRepository(database)
 	var roleService = role.NewService(roleRepo)
-	var roleController = role.NewController(server, roleService, logger)
-	roleController.RegisterRouters()
-	var infoController = info.NewController(server, cfg, database, logger)
-	infoController.RegisterRoutes()
+	var roleHandler = role.NewHandler(server, roleService, logger)
+	roleHandler.RegisterRouters()
+	var infoHandler = info.NewHandler(server, cfg, database, logger)
+	infoHandler.RegisterRoutes()
 	return server
 }
