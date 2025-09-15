@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"idm/docs"
 	"idm/inner/common"
 	database2 "idm/inner/database"
 	"idm/inner/employee"
@@ -17,6 +18,8 @@ import (
 	"go.uber.org/zap"
 )
 
+// @title IDM API documentation
+// @BasePath /api/v1/
 func main() {
 	var cfg = common.GetConfig(".env")
 	var logger = common.NewLogger(cfg)
@@ -27,7 +30,7 @@ func main() {
 			logger.Error("Error closing db", zap.Error(err))
 		}
 	}()
-
+	docs.SwaggerInfo.Version = cfg.AppVersion
 	var server = build(db, logger)
 	go func() {
 		var err = server.App.Listen(":8080")
