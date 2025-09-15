@@ -1,0 +1,531 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "IDM API documentation",
+        "contact": {}
+    },
+    "basePath": "/api/v1/",
+    "paths": {
+        "/employees": {
+            "get": {
+                "description": "Get all employees.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "employee"
+                ],
+                "summary": "get employees",
+                "parameters": [
+                    {
+                        "description": "empty",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/idm_inner_common.Response-employee_Entity"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error db",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/employees/": {
+            "post": {
+                "description": "Create a new employee.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "employee"
+                ],
+                "summary": "create a new employee",
+                "parameters": [
+                    {
+                        "description": "create employee request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/employee.CreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/idm_inner_common.Response-employee_Entity"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/idm_inner_common.Response-employee_Entity"
+                        }
+                    },
+                    "500": {
+                        "description": "error db",
+                        "schema": {
+                            "$ref": "#/definitions/idm_inner_common.Response-employee_Entity"
+                        }
+                    }
+                }
+            }
+        },
+        "/employees/add": {
+            "post": {
+                "description": "Create a new employee with secure transaction.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "employee"
+                ],
+                "summary": "create a new employee with transaction",
+                "parameters": [
+                    {
+                        "description": "create employee request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/employee.CreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/idm_inner_common.Response-employee_Entity"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/idm_inner_common.Response-employee_Entity"
+                        }
+                    },
+                    "500": {
+                        "description": "error db",
+                        "schema": {
+                            "$ref": "#/definitions/idm_inner_common.Response-employee_Entity"
+                        }
+                    }
+                }
+            }
+        },
+        "/employees/id": {
+            "post": {
+                "description": "Find employee by id.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "employee"
+                ],
+                "summary": "find employee",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Employee ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/idm_inner_common.Response-employee_Entity"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/idm_inner_common.Response-employee_Entity"
+                        }
+                    },
+                    "500": {
+                        "description": "error db",
+                        "schema": {
+                            "$ref": "#/definitions/idm_inner_common.Response-employee_Entity"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete employee by id.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "employee"
+                ],
+                "summary": "delete employee",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Employee ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/idm_inner_common.Response-employee_Entity"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/idm_inner_common.Response-employee_Entity"
+                        }
+                    },
+                    "500": {
+                        "description": "error db",
+                        "schema": {
+                            "$ref": "#/definitions/idm_inner_common.Response-employee_Entity"
+                        }
+                    }
+                }
+            }
+        },
+        "/employees/ids": {
+            "post": {
+                "description": "Find employees by ids.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "employee"
+                ],
+                "summary": "find employees",
+                "parameters": [
+                    {
+                        "description": "Employee IDs",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/idm_inner_common.Response-array_employee_Entity"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/idm_inner_common.Response-array_employee_Entity"
+                        }
+                    },
+                    "500": {
+                        "description": "error db",
+                        "schema": {
+                            "$ref": "#/definitions/idm_inner_common.Response-array_employee_Entity"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete employees by ids.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "employee"
+                ],
+                "summary": "delete employees",
+                "parameters": [
+                    {
+                        "description": "Employee IDs",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/idm_inner_common.Response-array_employee_Entity"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/idm_inner_common.Response-array_employee_Entity"
+                        }
+                    },
+                    "500": {
+                        "description": "error db",
+                        "schema": {
+                            "$ref": "#/definitions/idm_inner_common.Response-array_employee_Entity"
+                        }
+                    }
+                }
+            }
+        },
+        "/employees/page": {
+            "get": {
+                "description": "Find employees by name within limit and offsett.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "employee"
+                ],
+                "summary": "find employees by conditions",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page_number",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Text filter",
+                        "name": "text_filter",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/employee.PageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/employee.PageResponse"
+                        }
+                    },
+                    "408": {
+                        "description": "time out request",
+                        "schema": {
+                            "$ref": "#/definitions/employee.PageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "db error",
+                        "schema": {
+                            "$ref": "#/definitions/employee.PageResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "employee.CreateRequest": {
+            "type": "object",
+            "required": [
+                "age",
+                "created_at",
+                "name",
+                "surname",
+                "updated_at"
+            ],
+            "properties": {
+                "age": {
+                    "type": "integer",
+                    "maximum": 90,
+                    "minimum": 16
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 155,
+                    "minLength": 2
+                },
+                "surname": {
+                    "type": "string",
+                    "maxLength": 155,
+                    "minLength": 2
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "employee.Entity": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "surname": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "employee.PageResponse": {
+            "type": "object",
+            "properties": {
+                "page_num": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "result": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/employee.Response"
+                    }
+                },
+                "text_filter": {
+                    "type": "string"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "employee.Response": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "surname": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "idm_inner_common.Response-array_employee_Entity": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/employee.Entity"
+                    }
+                },
+                "error": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "idm_inner_common.Response-employee_Entity": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/employee.Entity"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        }
+    }
+}
