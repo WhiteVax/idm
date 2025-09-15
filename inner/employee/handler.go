@@ -60,7 +60,7 @@ func (c *Handler) RegisterRoutes() {
 // @Success 200 {object} common.Response[employee.Entity]
 // @Failure 400 {object} common.Response[employee.Entity] "invalid request"
 // @Failure 500 {object} common.Response[employee.Entity] "error db"
-// @Router /employees/ [post]
+// @Router /employees [post]
 func (c *Handler) CreateEmployee(ctx *fiber.Ctx) error {
 	var request CreateRequest
 	if err := ctx.BodyParser(&request); err != nil {
@@ -119,7 +119,7 @@ func (c *Handler) AddEmployee(ctx *fiber.Ctx) error {
 // @Success 200 {object} common.Response[employee.Entity]
 // @Failure 400 {object} common.Response[employee.Entity] "invalid request"
 // @Failure 500 {object} common.Response[employee.Entity] "error db"
-// @Router /employees/id [post]
+// @Router /employees/{id} [post]
 func (c *Handler) FindById(ctx *fiber.Ctx) error {
 	idParam := ctx.Params("id")
 	id, err := strconv.ParseInt(idParam, 10, 64)
@@ -172,7 +172,7 @@ func (c *Handler) FindByIds(ctx *fiber.Ctx) error {
 // @Success 200 {object} common.Response[employee.Entity]
 // @Failure 400 {object} common.Response[employee.Entity] "invalid request"
 // @Failure 500 {object} common.Response[employee.Entity] "error db"
-// @Router /employees/id [delete]
+// @Router /employees/{id} [delete]
 func (c *Handler) DeleteById(ctx *fiber.Ctx) error {
 	idParam := ctx.Params("id")
 	id, err := strconv.ParseInt(idParam, 10, 64)
@@ -222,7 +222,6 @@ func (c *Handler) DeleteByIds(ctx *fiber.Ctx) error {
 // @Tags employee
 // @Accept json
 // @Produce json
-// @Param request body string false "empty"
 // @Success 200 {object} common.Response[employee.Entity]
 // @Failure 400 {object} map[string]string "invalid request"
 // @Failure 500 {object} map[string]string "error db"

@@ -28,16 +28,6 @@ const docTemplate = `{
                     "employee"
                 ],
                 "summary": "get employees",
-                "parameters": [
-                    {
-                        "description": "empty",
-                        "name": "request",
-                        "in": "body",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -64,9 +54,7 @@ const docTemplate = `{
                         }
                     }
                 }
-            }
-        },
-        "/employees/": {
+            },
             "post": {
                 "description": "Create a new employee.",
                 "consumes": [
@@ -134,92 +122,6 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/employee.CreateRequest"
                         }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/idm_inner_common.Response-employee_Entity"
-                        }
-                    },
-                    "400": {
-                        "description": "invalid request",
-                        "schema": {
-                            "$ref": "#/definitions/idm_inner_common.Response-employee_Entity"
-                        }
-                    },
-                    "500": {
-                        "description": "error db",
-                        "schema": {
-                            "$ref": "#/definitions/idm_inner_common.Response-employee_Entity"
-                        }
-                    }
-                }
-            }
-        },
-        "/employees/id": {
-            "post": {
-                "description": "Find employee by id.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "employee"
-                ],
-                "summary": "find employee",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Employee ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/idm_inner_common.Response-employee_Entity"
-                        }
-                    },
-                    "400": {
-                        "description": "invalid request",
-                        "schema": {
-                            "$ref": "#/definitions/idm_inner_common.Response-employee_Entity"
-                        }
-                    },
-                    "500": {
-                        "description": "error db",
-                        "schema": {
-                            "$ref": "#/definitions/idm_inner_common.Response-employee_Entity"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete employee by id.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "employee"
-                ],
-                "summary": "delete employee",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Employee ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
                     }
                 ],
                 "responses": {
@@ -400,6 +302,92 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/employees/{id}": {
+            "post": {
+                "description": "Find employee by id.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "employee"
+                ],
+                "summary": "find employee",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Employee ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/idm_inner_common.Response-employee_Entity"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/idm_inner_common.Response-employee_Entity"
+                        }
+                    },
+                    "500": {
+                        "description": "error db",
+                        "schema": {
+                            "$ref": "#/definitions/idm_inner_common.Response-employee_Entity"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete employee by id.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "employee"
+                ],
+                "summary": "delete employee",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Employee ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/idm_inner_common.Response-employee_Entity"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/idm_inner_common.Response-employee_Entity"
+                        }
+                    },
+                    "500": {
+                        "description": "error db",
+                        "schema": {
+                            "$ref": "#/definitions/idm_inner_common.Response-employee_Entity"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -419,7 +407,8 @@ const docTemplate = `{
                     "minimum": 16
                 },
                 "created_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2025-09-15T20:45:00Z"
                 },
                 "name": {
                     "type": "string",
@@ -432,7 +421,8 @@ const docTemplate = `{
                     "minLength": 2
                 },
                 "updated_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2025-09-15T20:45:00Z"
                 }
             }
         },
@@ -443,7 +433,8 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "createdAt": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2025-09-15T20:45:00Z"
                 },
                 "id": {
                     "type": "integer"
@@ -455,7 +446,8 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updatedAt": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2025-09-15T20:45:00Z"
                 }
             }
         },
@@ -489,7 +481,8 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "created_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2025-09-15T20:45:00Z"
                 },
                 "id": {
                     "type": "integer"
@@ -501,7 +494,8 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updated_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2025-09-15T20:45:00Z"
                 }
             }
         },

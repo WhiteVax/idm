@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
+	"github.com/gofiber/swagger"
 )
 
 type Server struct {
@@ -23,6 +24,7 @@ func NewServer() *Server {
 	app := fiber.New()
 	// не поубличный
 	registerMiddleware(app)
+	app.Get("/swagger/*", swagger.HandlerDefault)
 	groupInternal := app.Group("/internal")
 	// создаём группу "/api"
 	groupApi := app.Group("/api")

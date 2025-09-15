@@ -7,6 +7,7 @@ definitions:
         minimum: 16
         type: integer
       created_at:
+        example: "2025-09-15T20:45:00Z"
         type: string
       name:
         maxLength: 155
@@ -17,6 +18,7 @@ definitions:
         minLength: 2
         type: string
       updated_at:
+        example: "2025-09-15T20:45:00Z"
         type: string
     required:
     - age
@@ -30,6 +32,7 @@ definitions:
       age:
         type: integer
       createdAt:
+        example: "2025-09-15T20:45:00Z"
         type: string
       id:
         type: integer
@@ -38,6 +41,7 @@ definitions:
       surname:
         type: string
       updatedAt:
+        example: "2025-09-15T20:45:00Z"
         type: string
     type: object
   employee.PageResponse:
@@ -60,6 +64,7 @@ definitions:
       age:
         type: integer
       created_at:
+        example: "2025-09-15T20:45:00Z"
         type: string
       id:
         type: integer
@@ -68,6 +73,7 @@ definitions:
       surname:
         type: string
       updated_at:
+        example: "2025-09-15T20:45:00Z"
         type: string
     type: object
   idm_inner_common.Response-array_employee_Entity:
@@ -99,12 +105,6 @@ paths:
       consumes:
       - application/json
       description: Get all employees.
-      parameters:
-      - description: empty
-        in: body
-        name: request
-        schema:
-          type: string
       produces:
       - application/json
       responses:
@@ -127,7 +127,6 @@ paths:
       summary: get employees
       tags:
       - employee
-  /employees/:
     post:
       consumes:
       - application/json
@@ -157,37 +156,7 @@ paths:
       summary: create a new employee
       tags:
       - employee
-  /employees/add:
-    post:
-      consumes:
-      - application/json
-      description: Create a new employee with secure transaction.
-      parameters:
-      - description: create employee request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/employee.CreateRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/idm_inner_common.Response-employee_Entity'
-        "400":
-          description: invalid request
-          schema:
-            $ref: '#/definitions/idm_inner_common.Response-employee_Entity'
-        "500":
-          description: error db
-          schema:
-            $ref: '#/definitions/idm_inner_common.Response-employee_Entity'
-      summary: create a new employee with transaction
-      tags:
-      - employee
-  /employees/id:
+  /employees/{id}:
     delete:
       consumes:
       - application/json
@@ -242,6 +211,36 @@ paths:
           schema:
             $ref: '#/definitions/idm_inner_common.Response-employee_Entity'
       summary: find employee
+      tags:
+      - employee
+  /employees/add:
+    post:
+      consumes:
+      - application/json
+      description: Create a new employee with secure transaction.
+      parameters:
+      - description: create employee request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/employee.CreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/idm_inner_common.Response-employee_Entity'
+        "400":
+          description: invalid request
+          schema:
+            $ref: '#/definitions/idm_inner_common.Response-employee_Entity'
+        "500":
+          description: error db
+          schema:
+            $ref: '#/definitions/idm_inner_common.Response-employee_Entity'
+      summary: create a new employee with transaction
       tags:
       - employee
   /employees/ids:
