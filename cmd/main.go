@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"idm/docs"
 	"idm/inner/common"
 	database2 "idm/inner/database"
@@ -31,11 +32,17 @@ func main() {
 		}
 	}()
 	docs.SwaggerInfo.Version = cfg.AppVersion
+	cer, err := tls.LoadX509KeyPair(cfg.SslSert, cfg.SslKey)
+	if err != nil {
+		logger.Panic("Failed certificate loading: ", zap.Error(err))
+	}
+	tlsConfig := &tls.Config{Certificates: []tls.Certificate{cer}}
+	ln, err := tls.Listen("tcp", ":8080", tlsConfig)
 	var server = build(db, logger)
 	go func() {
-		var err = server.App.Listen(":8080")
+		var err = server.App.Listener(ln)
 		if err != nil {
-			logger.Panic("http server error", zap.Error(err))
+			logger.Panic("Failed TLS listener creating: %s", zap.Error(err))
 		}
 	}()
 	var wg = &sync.WaitGroup{}
