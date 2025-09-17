@@ -38,6 +38,9 @@ func main() {
 	}
 	tlsConfig := &tls.Config{Certificates: []tls.Certificate{cer}}
 	ln, err := tls.Listen("tcp", ":8080", tlsConfig)
+	if err != nil {
+		logger.Panic("Failed TLS listen", zap.Error(err))
+	}
 	var server = build(db, logger)
 	go func() {
 		var err = server.App.Listener(ln)
