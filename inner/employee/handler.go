@@ -47,7 +47,7 @@ func (c *Handler) RegisterRoutes() {
 	c.Server.GroupApiV1.Delete("/employees/ids", c.DeleteByIds)
 	c.Server.GroupApiV1.Delete("/employees/:id", c.DeleteById)
 	c.Server.GroupApiV1.Get("/employees", c.FindAll)
-	c.Server.GroupApiV1.Get("/employees/page", c.FindByPages)
+	c.Server.GroupApiV1.Get("/employees/page", c.FindByPagesWithFilter)
 }
 
 func (c *Handler) CreateEmployee(ctx *fiber.Ctx) error {
@@ -165,13 +165,13 @@ func (c *Handler) FindAll(ctx *fiber.Ctx) error {
 	return common.OkResponse(ctx, employees)
 }
 
-func (c *Handler) FindByPages(ctx *fiber.Ctx) error {
+func (c *Handler) FindByPagesWithFilter(ctx *fiber.Ctx) error {
 	var request PageRequest
 	if err := ctx.QueryParser(&request); err != nil {
-		c.logger.Error("FindByPages: query parse error", zap.Error(err))
+		c.logger.Error("FindByPagesWithFilter: query parse error", zap.Error(err))
 		return common.ErrResponse(ctx, fiber.StatusBadRequest, "Invalid query parameters")
 	}
-	c.logger.Debug("FindByPages: received page request", zap.Any("request", request))
+	c.logger.Debug("FindByPagesWithFilter: received page request", zap.Any("request", request))
 
 	con, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
@@ -179,14 +179,14 @@ func (c *Handler) FindByPages(ctx *fiber.Ctx) error {
 	if err != nil {
 		var validationErr common.RequestValidationError
 		if ok := errors.As(err, &validationErr); ok {
-			c.logger.Error("FindByPages: validation error", zap.Error(err))
+			c.logger.Error("FindByPagesWithFilter: validation error", zap.Error(err))
 			return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
 		}
 		if errors.Is(err, context.DeadlineExceeded) {
-			c.logger.Error("FindByPages: request timeout", zap.Error(err))
+			c.logger.Error("FindByPagesWithFilter: request timeout", zap.Error(err))
 			return ctx.Status(fiber.StatusRequestTimeout).JSON(fiber.Map{"error": "request timeout"})
 		}
-		c.logger.Error("FindByPages: internal error", zap.Error(err))
+		c.logger.Error("FindByPagesWithFilter: internal error", zap.Error(err))
 		return common.ErrResponse(ctx, fiber.StatusInternalServerError, err.Error())
 	}
 	return common.OkResponse(ctx, employees)

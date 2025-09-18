@@ -517,10 +517,11 @@ func TestFindAllEmployeesWithLimitOffset(t *testing.T) {
 		handler := NewHandler(server, svc, &common.Logger{Logger: zap.NewNop()})
 		handler.RegisterRoutes()
 		expectedResponse := PageResponse{
-			Result:   []Response{{Id: 1, Name: "John"}},
-			PageSize: 10,
-			PageNum:  0,
-			Total:    100,
+			Result:     []Response{{Id: 1, Name: "John"}},
+			TextFilter: "",
+			PageSize:   10,
+			PageNum:    0,
+			Total:      100,
 		}
 		svc.On("FindAllWithLimitOffset",
 			mock.Anything,

@@ -61,16 +61,18 @@ func (r *Repository) FindAll(ctx context.Context) (employees []Entity, err error
 	return employees, nil
 }
 
-func (r *Repository) FindAllWithLimitOffset(ctx context.Context, limit int64, offset int64) ([]Entity, int64, error) {
+func (r *Repository) FindWithLimitOffsetAndFilter(ctx context.Context, limit int64, offset int64, filter string) ([]Entity, int64, error) {
 	ctx, cancel := context.WithTimeout(ctx, 4*time.Second)
 	defer cancel()
 	var employees []Entity
-	err := r.db.SelectContext(ctx, &employees, "SELECT * FROM employee ORDER BY id ASC LIMIT $1 OFFSET $2", limit, offset)
+	err := r.db.SelectContext(ctx, &employees,
+		"SELECT * FROM employee WHERE ($1 = '' OR name ILIKE '%' || $1 || '%') ORDER BY id ASC LIMIT $2 OFFSET $3",
+		filter, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
 	var total int64
-	err = r.db.GetContext(ctx, &total, "SELECT COUNT(*) FROM employee")
+	err = r.db.GetContext(ctx, &total, "SELECT COUNT(*) FROM employee WHERE ($1 = '' OR name ILIKE '%' || $1 || '%')", filter)
 	if err != nil {
 		return nil, 0, err
 	}

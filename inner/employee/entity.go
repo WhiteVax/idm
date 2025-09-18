@@ -48,15 +48,17 @@ type Response struct {
 }
 
 type PageRequest struct {
-	PageNumber int `json:"page_number" query:"page_number" validate:"min=0"`
-	PageSize   int `json:"page_size" query:"page_size" validate:"min=1,max=100"`
+	PageNumber int    `json:"page_number" query:"page_number" validate:"min=0"`
+	PageSize   int    `json:"page_size" query:"page_size" validate:"min=1,max=100"`
+	TextFilter string `json:"text_filter" query:"text_filter"`
 }
 
 type PageResponse struct {
-	Result   []Response `json:"result" query:"result"`
-	PageSize int        `json:"page_size" query:"page_size"`
-	PageNum  int        `json:"page_num" query:"page_num"`
-	Total    int64      `json:"total" query:"total"`
+	Result     []Response `json:"result" query:"result"`
+	TextFilter string     `json:"text_filter" query:"text_filter"`
+	PageSize   int        `json:"page_size" query:"page_size"`
+	PageNum    int        `json:"page_num" query:"page_num"`
+	Total      int64      `json:"total" query:"total"`
 }
 
 type EntityPageResponse struct {
