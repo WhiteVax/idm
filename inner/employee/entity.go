@@ -7,16 +7,16 @@ type Entity struct {
 	Name      string    `db:"name"`
 	Surname   string    `db:"surname"`
 	Age       int8      `db:"age"`
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
+	CreatedAt time.Time `db:"created_at" example:"2025-07-29T12:00:00Z"`
+	UpdatedAt time.Time `db:"updated_at" example:"2025-07-29T12:00:00Z"`
 }
 
 type CreateRequest struct {
 	Name      string    `json:"name" validate:"required,min=2,max=155"`
 	Surname   string    `json:"surname" validate:"required,min=2,max=155"`
 	Age       int8      `json:"age" validate:"required,min=16,max=90"`
-	CreatedAt time.Time `json:"created_at" validate:"required"`
-	UpdatedAt time.Time `json:"updated_at" validate:"required"`
+	CreatedAt time.Time `json:"created_at" validate:"required" example:"2025-07-29T12:00:00Z"`
+	UpdatedAt time.Time `json:"updated_at" validate:"required" example:"2025-07-29T12:00:00Z"`
 }
 
 func (req *CreateRequest) ToEntity() Entity {
@@ -43,8 +43,8 @@ type Response struct {
 	Name      string    `json:"name" query:"name"`
 	Surname   string    `json:"surname" query:"surname"`
 	Age       int8      `json:"age" query:"age"`
-	CreatedAt time.Time `json:"created_at" query:"created_at"`
-	UpdatedAt time.Time `json:"updated_at" query:"updated_at"`
+	CreatedAt time.Time `json:"created_at" query:"created_at" example:"2025-07-29T12:00:00Z"`
+	UpdatedAt time.Time `json:"updated_at" query:"updated_at" example:"2025-07-29T12:00:00Z"`
 }
 
 type PageRequest struct {
