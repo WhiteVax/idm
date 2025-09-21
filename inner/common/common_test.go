@@ -12,6 +12,8 @@ func TestGetConfigWhenNotFileThenGetVariablesEnvironment(t *testing.T) {
 	t.Setenv("DB_DSN", "host=127.0.0.1 port=5432")
 	t.Setenv("APP_NAME", "idm")
 	t.Setenv("APP_VERSION", "0.0.0")
+	t.Setenv("SSL_SERT", "sert")
+	t.Setenv("SSL_KEY", "Ket")
 
 	rls := GetConfig(os.Getenv(""))
 	t.Run("Should read from variable environment", func(t *testing.T) {
@@ -49,6 +51,8 @@ func TestGetConfigWhenFileEmptyThenGetVariablesEnvironment(t *testing.T) {
 	t.Setenv("APP_NAME", "idm")
 	t.Setenv("DB_DSN", "host=127.0.0.1 port=5432")
 	t.Setenv("APP_VERSION", "0.0.0")
+	t.Setenv("SSL_SERT", "sert")
+	t.Setenv("SSL_KEY", "Ket")
 
 	tempDir, err := os.MkdirTemp(".", "testNotArg")
 	if err != nil {
@@ -71,6 +75,8 @@ func TestGetConfigWhenHaveCorrectFileAndVariablesEnvThenGetFile(t *testing.T) {
 	t.Setenv("APP_NAME", "idm")
 	t.Setenv("DB_DSN", "host=127.0.0.1")
 	t.Setenv("APP_VERSION", "0.0.0")
+	t.Setenv("SSL_SERT", "sert")
+	t.Setenv("SSL_KEY", "Ket")
 	defer os.Unsetenv("DB_DRIV")
 	defer os.Unsetenv("DB_D")
 
@@ -100,15 +106,16 @@ func TestGetConfigWhenHaveCorrectFileAndVariablesEnvThenGetFile(t *testing.T) {
 
 }
 
-// TestGetConfigWhenHaveCorrectFileAndVariablesEnvThenGetVariable - в проекте есть .env  файл и в нём есть нужные переменные,
-//
-//	но в переменных окружения они тоже есть (с другими значениями) - должны получить структуру  idm.inner.common.Config,
-//	заполненную данными. Нужно проверить, какими значениями она будет заполнена
+// TestGetConfigWhenHaveCorrectFileAndVariablesEnvThenGetVariable - в проекте есть .env  файл и в
+// нём есть нужные переменные, но в переменных окружения они тоже есть (с другими значениями) -
+// должны получить структуру  idm.inner.common.Config, заполненную данными. Нужно проверить, какими значениями она будет заполнена
 func TestGetConfigWhenHaveCorrectFileAndVariablesEnvThenGetVariable(t *testing.T) {
 	t.Setenv("DB_DRIVER_NAME", "postgres")
 	t.Setenv("DB_DSN", "host=127.0.0.1")
 	t.Setenv("APP_NAME", "idm")
 	t.Setenv("APP_VERSION", "0.0.0")
+	t.Setenv("SSL_SERT", "sert")
+	t.Setenv("SSL_KEY", "Ket")
 
 	tempFile, err := os.CreateTemp(".", "test.env")
 	if err != nil {
