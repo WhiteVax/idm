@@ -41,6 +41,7 @@ func main() {
 	if err != nil {
 		logger.Panic("Failed TLS listen", zap.Error(err))
 	}
+	ln = common.CustomListener{Listener: ln, Url: "127.0.0.1:8080/swagger/index.html"}
 	var server = build(db, logger)
 	go func() {
 		var err = server.App.Listener(ln)
@@ -48,6 +49,7 @@ func main() {
 			logger.Panic("Failed TLS listener creating: %s", zap.Error(err))
 		}
 	}()
+
 	var wg = &sync.WaitGroup{}
 	wg.Add(1)
 	go gracefulShutdown(server, wg, logger)
