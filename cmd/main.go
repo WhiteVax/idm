@@ -41,7 +41,7 @@ func main() {
 	if err != nil {
 		logger.Panic("Failed TLS listen", zap.Error(err))
 	}
-	ln = common.CustomListener{Listener: ln, Url: "127.0.0.1:8080/swagger/index.html"}
+	ln = common.CustomListener{Listener: ln, Url: "localhost:8080/swagger/index.html"}
 	var server = build(db, logger)
 	go func() {
 		var err = server.App.Listener(ln)
