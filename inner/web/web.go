@@ -1,6 +1,8 @@
 package web
 
 import (
+	_ "idm/docs"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
@@ -21,7 +23,9 @@ func registerMiddleware(app *fiber.App) {
 // функция-конструктор
 func NewServer() *Server {
 	// создаём новый веб-вервер
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		AppName: "Idm app",
+	})
 	// не поубличный
 	registerMiddleware(app)
 	app.Get("/swagger/*", swagger.HandlerDefault)
