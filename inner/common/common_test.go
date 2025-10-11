@@ -53,6 +53,7 @@ func TestGetConfigWhenFileEmptyThenGetVariablesEnvironment(t *testing.T) {
 	t.Setenv("APP_VERSION", "0.0.0")
 	t.Setenv("SSL_SERT", "sert")
 	t.Setenv("SSL_KEY", "Ket")
+	t.Setenv("KEYCLOAK_JWK_URL", "url")
 
 	tempDir, err := os.MkdirTemp(".", "testNotArg")
 	if err != nil {
@@ -77,6 +78,7 @@ func TestGetConfigWhenHaveCorrectFileAndVariablesEnvThenGetFile(t *testing.T) {
 	t.Setenv("APP_VERSION", "0.0.0")
 	t.Setenv("SSL_SERT", "sert")
 	t.Setenv("SSL_KEY", "Ket")
+	t.Setenv("KEYCLOAK_JWK_URL", "url")
 	defer os.Unsetenv("DB_DRIV")
 	defer os.Unsetenv("DB_D")
 
@@ -116,6 +118,7 @@ func TestGetConfigWhenHaveCorrectFileAndVariablesEnvThenGetVariable(t *testing.T
 	t.Setenv("APP_VERSION", "0.0.0")
 	t.Setenv("SSL_SERT", "sert")
 	t.Setenv("SSL_KEY", "Ket")
+	t.Setenv("KEYCLOAK_JWK_URL", "url")
 
 	tempFile, err := os.CreateTemp(".", "test.env")
 	if err != nil {

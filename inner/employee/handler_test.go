@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"
@@ -70,9 +71,18 @@ func TestCreateEmployee(t *testing.T) {
 	logger := &common.Logger{
 		Logger: zap.NewNop(),
 	}
+
+	var claims = &web.IdmClaims{
+		RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmAdmin}},
+	}
+	var auth = func(c *fiber.Ctx) error {
+		c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+		return c.Next()
+	}
 	t.Run("Should return created employee id", func(t *testing.T) {
 		t.Parallel()
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
@@ -106,6 +116,7 @@ func TestCreateEmployee(t *testing.T) {
 	t.Run("Should return 400 on bad JSON", func(t *testing.T) {
 		t.Parallel()
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
@@ -120,6 +131,7 @@ func TestCreateEmployee(t *testing.T) {
 	t.Run("Should return 400 on AlreadyExistsError", func(t *testing.T) {
 		t.Parallel()
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
@@ -142,6 +154,7 @@ func TestCreateEmployee(t *testing.T) {
 	t.Run("Should return 500 on unknown internal error", func(t *testing.T) {
 		t.Parallel()
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
@@ -160,6 +173,45 @@ func TestCreateEmployee(t *testing.T) {
 		a.Nil(err)
 		a.Equal(http.StatusInternalServerError, resp.StatusCode)
 	})
+
+	t.Run("Should return 400 on bad JSON", func(t *testing.T) {
+		t.Parallel()
+		server := web.NewServer()
+		server.GroupApi.Use(auth)
+		svc := new(MockService)
+		handler := Handler{Server: server, employeeService: svc, logger: logger}
+		handler.RegisterRoutes()
+		body := strings.NewReader(`{invalid json}`)
+		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees", body)
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := server.App.Test(req)
+		a.Nil(err)
+		a.Equal(http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("Should return 403 with other permission user", func(t *testing.T) {
+		t.Parallel()
+		server := web.NewServer()
+
+		var claims = &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmUser}},
+		}
+		var auth = func(c *fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
+
+		server.GroupApi.Use(auth)
+		svc := new(MockService)
+		handler := Handler{Server: server, employeeService: svc, logger: logger}
+		handler.RegisterRoutes()
+		body := strings.NewReader(`{invalid json}`)
+		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees", body)
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := server.App.Test(req)
+		a.Nil(err)
+		a.Equal(http.StatusForbidden, resp.StatusCode)
+	})
 }
 
 func TestAddEmployee(t *testing.T) {
@@ -167,9 +219,18 @@ func TestAddEmployee(t *testing.T) {
 	logger := &common.Logger{
 		Logger: zap.NewNop(),
 	}
+
+	var claims = &web.IdmClaims{
+		RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmAdmin}},
+	}
+	var auth = func(c *fiber.Ctx) error {
+		c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+		return c.Next()
+	}
 	t.Run("Should add employee and get id with status 200", func(t *testing.T) {
 		t.Parallel()
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
@@ -207,6 +268,7 @@ func TestAddEmployee(t *testing.T) {
 	t.Run("When fail error 400", func(t *testing.T) {
 		t.Parallel()
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
@@ -221,6 +283,7 @@ func TestAddEmployee(t *testing.T) {
 	t.Run("Should return 500 on internal error", func(t *testing.T) {
 		t.Parallel()
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
@@ -249,6 +312,28 @@ func TestAddEmployee(t *testing.T) {
 		a.Nil(err)
 		a.Equal(http.StatusInternalServerError, resp.StatusCode)
 	})
+
+	t.Run("Should return 403 with other permission user", func(t *testing.T) {
+		t.Parallel()
+		server := web.NewServer()
+		var claims = &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmUser}},
+		}
+		var auth = func(c *fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
+		server.GroupApi.Use(auth)
+		svc := new(MockService)
+		handler := Handler{Server: server, employeeService: svc, logger: logger}
+		handler.RegisterRoutes()
+		body := strings.NewReader("")
+		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees/add", body)
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := server.App.Test(req)
+		a.Nil(err)
+		a.Equal(http.StatusForbidden, resp.StatusCode)
+	})
 }
 
 func TestDeleteByIdEmployee(t *testing.T) {
@@ -256,9 +341,18 @@ func TestDeleteByIdEmployee(t *testing.T) {
 	logger := &common.Logger{
 		Logger: zap.NewNop(),
 	}
+
+	var claims = &web.IdmClaims{
+		RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmAdmin}},
+	}
+	var auth = func(c *fiber.Ctx) error {
+		c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+		return c.Next()
+	}
 	t.Run("When delete status 200", func(t *testing.T) {
 		t.Parallel()
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
@@ -273,6 +367,7 @@ func TestDeleteByIdEmployee(t *testing.T) {
 	t.Run("When fail error 400", func(t *testing.T) {
 		t.Parallel()
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
@@ -287,6 +382,7 @@ func TestDeleteByIdEmployee(t *testing.T) {
 	t.Run("When fail error 500", func(t *testing.T) {
 		t.Parallel()
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
@@ -297,6 +393,28 @@ func TestDeleteByIdEmployee(t *testing.T) {
 		a.Nil(err)
 		a.Equal(http.StatusInternalServerError, resp.StatusCode)
 	})
+
+	t.Run("Should return 403 with other permission user", func(t *testing.T) {
+		t.Parallel()
+		server := web.NewServer()
+		var claims = &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmUser}},
+		}
+		var auth = func(c *fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
+		server.GroupApi.Use(auth)
+		svc := new(MockService)
+		handler := Handler{Server: server, employeeService: svc, logger: logger}
+		handler.RegisterRoutes()
+
+		svc.On("DeleteById", int64(0)).Return(Response{Id: 0}, nil)
+		req := httptest.NewRequest(fiber.MethodDelete, "/api/v1/employees/abc", nil)
+		resp, err := server.App.Test(req)
+		a.Nil(err)
+		a.Equal(http.StatusForbidden, resp.StatusCode)
+	})
 }
 
 func TestDeleteByIdsEmployees(t *testing.T) {
@@ -304,9 +422,18 @@ func TestDeleteByIdsEmployees(t *testing.T) {
 	logger := &common.Logger{
 		Logger: zap.NewNop(),
 	}
+
+	var claims = &web.IdmClaims{
+		RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmAdmin}},
+	}
+	var auth = func(c *fiber.Ctx) error {
+		c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+		return c.Next()
+	}
 	t.Run("When delete with status 200", func(t *testing.T) {
 		t.Parallel()
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
@@ -330,6 +457,7 @@ func TestDeleteByIdsEmployees(t *testing.T) {
 	t.Run("When fail error 400", func(t *testing.T) {
 		t.Parallel()
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
@@ -343,6 +471,7 @@ func TestDeleteByIdsEmployees(t *testing.T) {
 	t.Run("When fail error 500", func(t *testing.T) {
 		t.Parallel()
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
@@ -358,6 +487,27 @@ func TestDeleteByIdsEmployees(t *testing.T) {
 		a.Equal(fiber.StatusInternalServerError, resp.StatusCode)
 		svc.AssertExpectations(t)
 	})
+
+	t.Run("Should return 403 with other permission user", func(t *testing.T) {
+		t.Parallel()
+		server := web.NewServer()
+		var claims = &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmUser}},
+		}
+		var auth = func(c *fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
+		server.GroupApi.Use(auth)
+		svc := new(MockService)
+		handler := Handler{Server: server, employeeService: svc, logger: logger}
+		handler.RegisterRoutes()
+		req := httptest.NewRequest(fiber.MethodDelete, "/api/v1/employees/ids", nil)
+		resp, err := server.App.Test(req)
+		a.Nil(err)
+		a.Equal(http.StatusForbidden, resp.StatusCode)
+		svc.AssertExpectations(t)
+	})
 }
 
 func TestFindByIdsEmployees(t *testing.T) {
@@ -365,9 +515,18 @@ func TestFindByIdsEmployees(t *testing.T) {
 	logger := &common.Logger{
 		Logger: zap.NewNop(),
 	}
+
+	var claims = &web.IdmClaims{
+		RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmUser}},
+	}
+	var auth = func(c *fiber.Ctx) error {
+		c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+		return c.Next()
+	}
 	t.Run("When find by ids with status 200", func(t *testing.T) {
 		t.Parallel()
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
@@ -391,6 +550,7 @@ func TestFindByIdsEmployees(t *testing.T) {
 	t.Run("When fail error 400", func(t *testing.T) {
 		t.Parallel()
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
@@ -404,6 +564,7 @@ func TestFindByIdsEmployees(t *testing.T) {
 	t.Run("When fail error 500", func(t *testing.T) {
 		t.Parallel()
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
@@ -419,6 +580,27 @@ func TestFindByIdsEmployees(t *testing.T) {
 		a.Equal(fiber.StatusInternalServerError, resp.StatusCode)
 		svc.AssertExpectations(t)
 	})
+
+	t.Run("Should return 403 with other permission user", func(t *testing.T) {
+		t.Parallel()
+		server := web.NewServer()
+		var claims = &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmAdmin}},
+		}
+		var auth = func(c *fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
+		server.GroupApi.Use(auth)
+		svc := new(MockService)
+		handler := Handler{Server: server, employeeService: svc, logger: logger}
+		handler.RegisterRoutes()
+
+		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees/ids", nil)
+		resp, err := server.App.Test(req)
+		a.Nil(err)
+		a.Equal(http.StatusForbidden, resp.StatusCode)
+	})
 }
 
 func TestFindByIdEmployee(t *testing.T) {
@@ -426,9 +608,18 @@ func TestFindByIdEmployee(t *testing.T) {
 	logger := &common.Logger{
 		Logger: zap.NewNop(),
 	}
+
+	var claims = &web.IdmClaims{
+		RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmUser}},
+	}
+	var auth = func(c *fiber.Ctx) error {
+		c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+		return c.Next()
+	}
 	t.Run("When find by id status 200", func(t *testing.T) {
 		t.Parallel()
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
@@ -443,6 +634,7 @@ func TestFindByIdEmployee(t *testing.T) {
 	t.Run("When fail error 400", func(t *testing.T) {
 		t.Parallel()
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
@@ -457,6 +649,7 @@ func TestFindByIdEmployee(t *testing.T) {
 	t.Run("When fail error 500", func(t *testing.T) {
 		t.Parallel()
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
@@ -467,6 +660,28 @@ func TestFindByIdEmployee(t *testing.T) {
 		a.Nil(err)
 		a.Equal(http.StatusInternalServerError, resp.StatusCode)
 	})
+
+	t.Run("Should return 403 with other permission user", func(t *testing.T) {
+		t.Parallel()
+		server := web.NewServer()
+		var claims = &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmAdmin}},
+		}
+		var auth = func(c *fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
+		server.GroupApi.Use(auth)
+		svc := new(MockService)
+		handler := Handler{Server: server, employeeService: svc, logger: logger}
+		handler.RegisterRoutes()
+
+		svc.On("FindById", int64(0)).Return(Response{Id: 0}, nil)
+		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees/a", nil)
+		resp, err := server.App.Test(req)
+		a.Nil(err)
+		a.Equal(http.StatusForbidden, resp.StatusCode)
+	})
 }
 
 func TestFindAllEmployees(t *testing.T) {
@@ -474,9 +689,18 @@ func TestFindAllEmployees(t *testing.T) {
 	logger := &common.Logger{
 		Logger: zap.NewNop(),
 	}
+
+	var claims = &web.IdmClaims{
+		RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmUser}},
+	}
+	var auth = func(c *fiber.Ctx) error {
+		c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+		return c.Next()
+	}
 	t.Run("When find all employees status 200", func(t *testing.T) {
 		t.Parallel()
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
@@ -493,6 +717,7 @@ func TestFindAllEmployees(t *testing.T) {
 	t.Run("When find all employees status 500", func(t *testing.T) {
 		t.Parallel()
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
@@ -505,14 +730,45 @@ func TestFindAllEmployees(t *testing.T) {
 		a.Nil(err)
 		a.Equal(http.StatusInternalServerError, resp.StatusCode)
 	})
+
+	t.Run("Should return 403 with other permission user", func(t *testing.T) {
+		t.Parallel()
+		server := web.NewServer()
+		var claims = &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmAdmin}},
+		}
+		var auth = func(c *fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
+		server.GroupApi.Use(auth)
+		svc := new(MockService)
+		handler := Handler{Server: server, employeeService: svc, logger: logger}
+		handler.RegisterRoutes()
+
+		expected := []Response{{Id: 1}, {Id: 2}}
+		svc.On("FindAll").Return(expected, nil)
+		req := httptest.NewRequest(fiber.MethodGet, "/api/v1/employees", nil)
+
+		resp, err := server.App.Test(req)
+		a.Nil(err)
+		a.Equal(http.StatusForbidden, resp.StatusCode)
+	})
 }
 
 func TestFindAllEmployeesWithLimitOffset(t *testing.T) {
-
+	var claims = &web.IdmClaims{
+		RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmUser}},
+	}
+	var auth = func(c *fiber.Ctx) error {
+		c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+		return c.Next()
+	}
 	t.Run("Should return 200 OK with valid request", func(t *testing.T) {
 		t.Parallel()
 		a := assert.New(t)
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := NewHandler(server, svc, &common.Logger{Logger: zap.NewNop()})
 		handler.RegisterRoutes()
@@ -548,6 +804,7 @@ func TestFindAllEmployeesWithLimitOffset(t *testing.T) {
 		t.Parallel()
 		a := assert.New(t)
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := NewHandler(server, svc, &common.Logger{Logger: zap.NewNop()})
 		handler.RegisterRoutes()
@@ -567,6 +824,7 @@ func TestFindAllEmployeesWithLimitOffset(t *testing.T) {
 		t.Parallel()
 		a := assert.New(t)
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := NewHandler(server, svc, &common.Logger{Logger: zap.NewNop()})
 		handler.RegisterRoutes()
@@ -587,6 +845,7 @@ func TestFindAllEmployeesWithLimitOffset(t *testing.T) {
 		a := assert.New(t)
 
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := NewHandler(server, svc, &common.Logger{Logger: zap.NewNop()})
 		handler.RegisterRoutes()
@@ -618,6 +877,7 @@ func TestFindAllEmployeesWithLimitOffset(t *testing.T) {
 		a := assert.New(t)
 
 		server := web.NewServer()
+		server.GroupApi.Use(auth)
 		svc := new(MockService)
 		handler := NewHandler(server, svc, &common.Logger{Logger: zap.NewNop()})
 		handler.RegisterRoutes()
@@ -641,5 +901,32 @@ func TestFindAllEmployeesWithLimitOffset(t *testing.T) {
 
 		a.Equal(fiber.StatusRequestTimeout, resp.StatusCode)
 		svc.AssertExpectations(t)
+	})
+
+	t.Run("Should return 403 with other permission user", func(t *testing.T) {
+		t.Parallel()
+		a := assert.New(t)
+		server := web.NewServer()
+		var claims = &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmAdmin}},
+		}
+		var auth = func(c *fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
+		server.GroupApi.Use(auth)
+		svc := new(MockService)
+		handler := NewHandler(server, svc, &common.Logger{Logger: zap.NewNop()})
+		handler.RegisterRoutes()
+
+		body := `{"page_size":"abc","page_number":1}`
+		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees/page", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := server.App.Test(req)
+		a.Nil(err)
+		defer resp.Body.Close()
+
+		a.Equal(fiber.StatusForbidden, resp.StatusCode)
 	})
 }

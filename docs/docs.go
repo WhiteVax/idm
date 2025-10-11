@@ -17,6 +17,11 @@ const docTemplate = `{
     "paths": {
         "/employees": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Get all employees.",
                 "consumes": [
                     "application/json"
@@ -56,6 +61,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Create a new employee.",
                 "consumes": [
                     "application/json"
@@ -102,6 +112,11 @@ const docTemplate = `{
         },
         "/employees/add": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Create a new employee with secure transaction.",
                 "consumes": [
                     "application/json"
@@ -148,6 +163,11 @@ const docTemplate = `{
         },
         "/employees/ids": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Find employees by ids.",
                 "consumes": [
                     "application/json"
@@ -195,6 +215,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Delete employees by ids.",
                 "consumes": [
                     "application/json"
@@ -244,6 +269,11 @@ const docTemplate = `{
         },
         "/employees/page": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Find employees by name within limit and offsett.",
                 "consumes": [
                     "application/json"
@@ -305,6 +335,11 @@ const docTemplate = `{
         },
         "/employees/{id}": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Find employee by id.",
                 "consumes": [
                     "application/json"
@@ -347,6 +382,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Delete employee by id.",
                 "consumes": [
                     "application/json"
@@ -408,7 +448,7 @@ const docTemplate = `{
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-09-15T20:45:00Z"
+                    "example": "2025-07-29T12:00:00Z"
                 },
                 "name": {
                     "type": "string",
@@ -422,7 +462,7 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "string",
-                    "example": "2025-09-15T20:45:00Z"
+                    "example": "2025-07-29T12:00:00Z"
                 }
             }
         },
@@ -434,7 +474,7 @@ const docTemplate = `{
                 },
                 "createdAt": {
                     "type": "string",
-                    "example": "2025-09-15T20:45:00Z"
+                    "example": "2025-07-29T12:00:00Z"
                 },
                 "id": {
                     "type": "integer"
@@ -447,7 +487,7 @@ const docTemplate = `{
                 },
                 "updatedAt": {
                     "type": "string",
-                    "example": "2025-09-15T20:45:00Z"
+                    "example": "2025-07-29T12:00:00Z"
                 }
             }
         },
@@ -482,7 +522,7 @@ const docTemplate = `{
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-09-15T20:45:00Z"
+                    "example": "2025-07-29T12:00:00Z"
                 },
                 "id": {
                     "type": "integer"
@@ -495,7 +535,7 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "string",
-                    "example": "2025-09-15T20:45:00Z"
+                    "example": "2025-07-29T12:00:00Z"
                 }
             }
         },
@@ -530,12 +570,19 @@ const docTemplate = `{
                 }
             }
         }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
+	Version:          "1.0",
 	Host:             "",
 	BasePath:         "/api/v1/",
 	Schemes:          []string{},
