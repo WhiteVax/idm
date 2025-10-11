@@ -15,12 +15,19 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/fiber/v2/middleware/requestid"
+	"github.com/gofiber/swagger"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
 
 // @title IDM API documentation
 // @BasePath /api/v1/
+// @version 1.0
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 	var cfg = common.GetConfig(".env")
 	var logger = common.NewLogger(cfg)
@@ -42,7 +49,7 @@ func main() {
 		logger.Panic("Failed TLS listen", zap.Error(err))
 	}
 	ln = common.CustomListener{Listener: ln, Url: "localhost:8080/swagger/index.html"}
-	var server = build(db, logger)
+	var server = build(db, logger, cfg)
 	go func() {
 		var err = server.App.Listener(ln)
 		if err != nil {
@@ -72,9 +79,12 @@ func gracefulShutdown(server *web.Server, wg *sync.WaitGroup, logger *common.Log
 	logger.Info("Server exiting")
 }
 
-func build(database *sqlx.DB, logger *common.Logger) *web.Server {
-	var cfg = common.GetConfig(".env")
+func build(database *sqlx.DB, logger *common.Logger, cfg common.Config) *web.Server {
 	var server = web.NewServer()
+	server.App.Use("/swagger/*", swagger.HandlerDefault)
+	server.App.Use(requestid.New())
+	server.App.Use(recover.New())
+	server.GroupApi.Use(web.AuthMiddleware(logger))
 	var employeeRepo = employee.NewEmployeeRepository(database)
 	var employeeService = employee.NewService(employeeRepo)
 	var employeeHandler = employee.NewHandler(server, employeeService, logger)

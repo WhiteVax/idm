@@ -7,7 +7,7 @@ definitions:
         minimum: 16
         type: integer
       created_at:
-        example: "2025-09-15T20:45:00Z"
+        example: "2025-07-29T12:00:00Z"
         type: string
       name:
         maxLength: 155
@@ -18,7 +18,7 @@ definitions:
         minLength: 2
         type: string
       updated_at:
-        example: "2025-09-15T20:45:00Z"
+        example: "2025-07-29T12:00:00Z"
         type: string
     required:
     - age
@@ -32,7 +32,7 @@ definitions:
       age:
         type: integer
       createdAt:
-        example: "2025-09-15T20:45:00Z"
+        example: "2025-07-29T12:00:00Z"
         type: string
       id:
         type: integer
@@ -41,7 +41,7 @@ definitions:
       surname:
         type: string
       updatedAt:
-        example: "2025-09-15T20:45:00Z"
+        example: "2025-07-29T12:00:00Z"
         type: string
     type: object
   employee.PageResponse:
@@ -64,7 +64,7 @@ definitions:
       age:
         type: integer
       created_at:
-        example: "2025-09-15T20:45:00Z"
+        example: "2025-07-29T12:00:00Z"
         type: string
       id:
         type: integer
@@ -73,7 +73,7 @@ definitions:
       surname:
         type: string
       updated_at:
-        example: "2025-09-15T20:45:00Z"
+        example: "2025-07-29T12:00:00Z"
         type: string
     type: object
   idm_inner_common.Response-array_employee_Entity:
@@ -99,6 +99,7 @@ definitions:
 info:
   contact: {}
   title: IDM API documentation
+  version: "1.0"
 paths:
   /employees:
     get:
@@ -124,6 +125,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: get employees
       tags:
       - employee
@@ -153,6 +156,8 @@ paths:
           description: error db
           schema:
             $ref: '#/definitions/idm_inner_common.Response-employee_Entity'
+      security:
+      - BearerAuth: []
       summary: create a new employee
       tags:
       - employee
@@ -182,6 +187,8 @@ paths:
           description: error db
           schema:
             $ref: '#/definitions/idm_inner_common.Response-employee_Entity'
+      security:
+      - BearerAuth: []
       summary: delete employee
       tags:
       - employee
@@ -210,6 +217,8 @@ paths:
           description: error db
           schema:
             $ref: '#/definitions/idm_inner_common.Response-employee_Entity'
+      security:
+      - BearerAuth: []
       summary: find employee
       tags:
       - employee
@@ -240,6 +249,8 @@ paths:
           description: error db
           schema:
             $ref: '#/definitions/idm_inner_common.Response-employee_Entity'
+      security:
+      - BearerAuth: []
       summary: create a new employee with transaction
       tags:
       - employee
@@ -272,6 +283,8 @@ paths:
           description: error db
           schema:
             $ref: '#/definitions/idm_inner_common.Response-array_employee_Entity'
+      security:
+      - BearerAuth: []
       summary: delete employees
       tags:
       - employee
@@ -303,6 +316,8 @@ paths:
           description: error db
           schema:
             $ref: '#/definitions/idm_inner_common.Response-array_employee_Entity'
+      security:
+      - BearerAuth: []
       summary: find employees
       tags:
       - employee
@@ -343,7 +358,14 @@ paths:
           description: db error
           schema:
             $ref: '#/definitions/employee.PageResponse'
+      security:
+      - BearerAuth: []
       summary: find employees by conditions
       tags:
       - employee
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"
