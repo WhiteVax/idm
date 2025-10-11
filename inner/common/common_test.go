@@ -14,6 +14,7 @@ func TestGetConfigWhenNotFileThenGetVariablesEnvironment(t *testing.T) {
 	t.Setenv("APP_VERSION", "0.0.0")
 	t.Setenv("SSL_SERT", "sert")
 	t.Setenv("SSL_KEY", "Ket")
+	t.Setenv("KEYCLOAK_JWK_URL", "urh")
 
 	rls := GetConfig(os.Getenv(""))
 	t.Run("Should read from variable environment", func(t *testing.T) {
