@@ -21,12 +21,13 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
 
-      - uses: actions/setup-go@v5
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
           go-version: '1.25'
           cache: false
 
-      - name: golangci-lint
+      - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
           version: v1.64.8
@@ -49,11 +50,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
           go-version: '1.25'
-      - name: WriteGoList
+
+      - name: Write Go module list
         run: go list -json -m all > go.list
-      - name: Nancy
+
+      - name: Run Nancy
         uses: sonatype-nexus-community/nancy-github-action@main
         continue-on-error: true
