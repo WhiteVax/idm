@@ -14,12 +14,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 )
 
-func SetupTestServer(t *testing.T) (*web.Server, *sqlx.DB) {
+func SetupTestServerAdmin(t *testing.T) (*web.Server, *sqlx.DB) {
 	t.Helper()
 
 	cfg := common.GetConfig(".env")
@@ -32,12 +34,44 @@ func SetupTestServer(t *testing.T) (*web.Server, *sqlx.DB) {
 	}
 
 	server := web.NewServer()
+
+	claims := &web.IdmClaims{
+		RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmAdmin}},
+	}
+	auth := func(c *fiber.Ctx) error {
+		c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+		return c.Next()
+	}
+	server.GroupApi.Use(auth)
+
 	employeeRepo := employee.NewEmployeeRepository(db)
 	employeeService := employee.NewService(employeeRepo)
 	employeeHandler := employee.NewHandler(server, employeeService, logger)
 	employeeHandler.RegisterRoutes()
 
 	return server, db
+}
+
+func SetupTestServerUser(t *testing.T) *web.Server {
+	t.Helper()
+
+	cfg := common.GetConfig(".env")
+	logger := common.NewLogger(cfg)
+	db := sqlx.MustConnect(cfg.DbDriverName, cfg.Dsn)
+	server := web.NewServer()
+	claims := &web.IdmClaims{
+		RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmUser}},
+	}
+	auth := func(c *fiber.Ctx) error {
+		c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+		return c.Next()
+	}
+	server.GroupApi.Use(auth)
+	employeeRepo := employee.NewEmployeeRepository(db)
+	employeeService := employee.NewService(employeeRepo)
+	employeeHandler := employee.NewHandler(server, employeeService, logger)
+	employeeHandler.RegisterRoutes()
+	return server
 }
 
 func CreateEmployee(t *testing.T, app *web.Server, name, surname string, age int8) {
@@ -83,7 +117,7 @@ func TestServiceNilCheck(t *testing.T) {
 
 func TestIntegrationAddEmployee(t *testing.T) {
 	a := assert.New(t)
-	server, db := SetupTestServer(t)
+	server, db := SetupTestServerAdmin(t)
 	defer db.Close()
 
 	newEmployee := employee.Entity{
@@ -95,6 +129,7 @@ func TestIntegrationAddEmployee(t *testing.T) {
 	}
 
 	body, _ := json.Marshal(newEmployee)
+
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/employees/add", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 
@@ -114,16 +149,18 @@ func TestIntegrationAddEmployee(t *testing.T) {
 
 func TestEmployeePagination(t *testing.T) {
 	a := assert.New(t)
-	app, _ := SetupTestServer(t)
+	appAdmin, _ := SetupTestServerAdmin(t)
 
 	for i := 1; i <= 5; i++ {
-		CreateEmployee(t, app, fmt.Sprintf("Name_%d", i), fmt.Sprintf("Surname_%d", i), 20+int8(i))
+		CreateEmployee(t, appAdmin, fmt.Sprintf("Name_%d", i), fmt.Sprintf("Surname_%d", i), 20+int8(i))
 	}
+
+	addUser := SetupTestServerUser(t)
 
 	t.Run("First page with 3 entries - 3", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet,
 			"/api/v1/employees/page?page_number=0&page_size=3&text_filter=name_", nil)
-		resp, _ := app.App.Test(req)
+		resp, _ := addUser.App.Test(req)
 
 		a.Equal(http.StatusOK, resp.StatusCode)
 
@@ -140,7 +177,7 @@ func TestEmployeePagination(t *testing.T) {
 	t.Run("Second page with 2 entries - 2", func(t *testing.T) {
 		t.Parallel()
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/page?page_number=1&page_size=3", nil)
-		resp, _ := app.App.Test(req)
+		resp, _ := addUser.App.Test(req)
 
 		a.Equal(http.StatusOK, resp.StatusCode)
 
@@ -152,7 +189,7 @@ func TestEmployeePagination(t *testing.T) {
 	t.Run("Third page with 3 entries - 0", func(t *testing.T) {
 		t.Parallel()
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/page?page_number=2&page_size=3", nil)
-		resp, _ := app.App.Test(req)
+		resp, _ := addUser.App.Test(req)
 
 		a.Equal(http.StatusOK, resp.StatusCode)
 
@@ -163,7 +200,7 @@ func TestEmployeePagination(t *testing.T) {
 	t.Run("Invalid web request", func(t *testing.T) {
 		t.Parallel()
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/page?page_number=abc&page_size=xyz", nil)
-		resp, _ := app.App.Test(req)
+		resp, _ := addUser.App.Test(req)
 		var pageResp employee.EntityPageResponse
 		_ = json.NewDecoder(resp.Body).Decode(&pageResp)
 
@@ -175,7 +212,7 @@ func TestEmployeePagination(t *testing.T) {
 	t.Run("Without instructions Page_number", func(t *testing.T) {
 		t.Parallel()
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/page?page_size=3", nil)
-		resp, _ := app.App.Test(req)
+		resp, _ := addUser.App.Test(req)
 
 		a.Equal(http.StatusOK, resp.StatusCode)
 
@@ -187,7 +224,7 @@ func TestEmployeePagination(t *testing.T) {
 	t.Run("Without instructions PageSize", func(t *testing.T) {
 		t.Parallel()
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/page?page_number=0", nil)
-		resp, _ := app.App.Test(req)
+		resp, _ := addUser.App.Test(req)
 		var pageResp employee.EntityPageResponse
 		_ = json.NewDecoder(resp.Body).Decode(&pageResp)
 
@@ -199,7 +236,7 @@ func TestEmployeePagination(t *testing.T) {
 		t.Parallel()
 		req := httptest.NewRequest(http.MethodGet,
 			"/api/v1/employees/page?page_number=0&page_size=3&text_filter=super_", nil)
-		resp, _ := app.App.Test(req)
+		resp, _ := addUser.App.Test(req)
 		var pageResp employee.EntityPageResponse
 		_ = json.NewDecoder(resp.Body).Decode(&pageResp)
 
@@ -214,7 +251,7 @@ func TestEmployeePagination(t *testing.T) {
 		t.Parallel()
 		req := httptest.NewRequest(http.MethodGet,
 			"/api/v1/employees/page?page_number=0&page_size=5&text_filter=na", nil)
-		resp, _ := app.App.Test(req)
+		resp, _ := addUser.App.Test(req)
 		var pageResp employee.EntityPageResponse
 		_ = json.NewDecoder(resp.Body).Decode(&pageResp)
 
