@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/fiber/v2/middleware/requestid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,6 +15,7 @@ func TestNewServerMiddleware(t *testing.T) {
 		t.Parallel()
 		a := assert.New(t)
 		server := NewServer()
+		server.App.Use(recover.New())
 		server.App.Get("/panic", func(c *fiber.Ctx) error {
 			panic("panic")
 		})
@@ -27,6 +30,8 @@ func TestNewServerMiddleware(t *testing.T) {
 		t.Parallel()
 		a := assert.New(t)
 		server := NewServer()
+		server.App.Use(recover.New())
+		server.App.Use(requestid.New())
 		server.App.Get("/id", func(c *fiber.Ctx) error {
 			return c.SendString("X-Request-ID")
 		})

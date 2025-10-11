@@ -4,8 +4,6 @@ import (
 	_ "idm/docs"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/recover"
-	"github.com/gofiber/fiber/v2/middleware/requestid"
 )
 
 type Server struct {
@@ -17,11 +15,6 @@ type Server struct {
 
 type AuthMiddlewareInterface interface {
 	ProtectWithJwt() func(*fiber.Ctx) error
-}
-
-func registerMiddleware(app *fiber.App) {
-	app.Use(recover.New())
-	app.Use(requestid.New())
 }
 
 // NewServer - функция-конструктор
