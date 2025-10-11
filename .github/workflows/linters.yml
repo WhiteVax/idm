@@ -18,15 +18,18 @@ jobs:
     name: runner / golangci-lint
     runs-on: ubuntu-latest
     steps:
-      - name: Check out code into the Go module directory
+      - name: Check out code
         uses: actions/checkout@v4
+
       - uses: actions/setup-go@v5
         with:
           go-version: '1.25'
           cache: false
+
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
+          version: v1.64.8
           install-mode: source
           args: --timeout=15m
 
@@ -47,6 +50,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
       - name: WriteGoList
         run: go list -json -m all > go.list
       - name: Nancy
