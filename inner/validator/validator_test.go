@@ -25,7 +25,7 @@ func AssertValidationField(t *testing.T, err error, expectedField string) {
 	}
 }
 
-func TestCreateRequest(t *testing.T) {
+func TestCreateRequestValidator(t *testing.T) {
 	v := validator.New()
 	validRequest := employee.CreateRequest{
 		Name:      "John",

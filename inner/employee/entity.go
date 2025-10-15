@@ -3,11 +3,13 @@ package employee
 import "time"
 
 type Entity struct {
-	Id        int64     `db:"id"`
-	Name      string    `db:"name"`
-	Surname   string    `db:"surname"`
-	Age       int8      `db:"age"`
+	Id      int64  `db:"id"`
+	Name    string `db:"name"`
+	Surname string `db:"surname"`
+	Age     int8   `db:"age"`
+	// @example 2025-07-29T12:00:00Z
 	CreatedAt time.Time `db:"created_at" example:"2025-07-29T12:00:00Z"`
+	// @example 2025-07-29T12:00:00Z
 	UpdatedAt time.Time `db:"updated_at" example:"2025-07-29T12:00:00Z"`
 }
 

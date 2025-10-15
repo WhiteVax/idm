@@ -212,6 +212,30 @@ func TestCreateEmployee(t *testing.T) {
 		a.Nil(err)
 		a.Equal(http.StatusForbidden, resp.StatusCode)
 	})
+
+	t.Run("Should return 403 with empty permission user", func(t *testing.T) {
+		t.Parallel()
+		server := web.NewServer()
+
+		var claims = &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{}},
+		}
+		var auth = func(c *fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
+
+		server.GroupApi.Use(auth)
+		svc := new(MockService)
+		handler := Handler{Server: server, employeeService: svc, logger: logger}
+		handler.RegisterRoutes()
+		body := strings.NewReader(`{invalid json}`)
+		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees", body)
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := server.App.Test(req)
+		a.Nil(err)
+		a.Equal(http.StatusForbidden, resp.StatusCode)
+	})
 }
 
 func TestAddEmployee(t *testing.T) {

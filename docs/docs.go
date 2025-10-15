@@ -473,6 +473,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "createdAt": {
+                    "description": "@example 2025-07-29T12:00:00Z",
                     "type": "string",
                     "example": "2025-07-29T12:00:00Z"
                 },
@@ -486,6 +487,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updatedAt": {
+                    "description": "@example 2025-07-29T12:00:00Z",
                     "type": "string",
                     "example": "2025-07-29T12:00:00Z"
                 }
