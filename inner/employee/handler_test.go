@@ -953,4 +953,68 @@ func TestFindAllEmployeesWithLimitOffset(t *testing.T) {
 
 		a.Equal(fiber.StatusForbidden, resp.StatusCode)
 	})
+
+	t.Run("Should return 401 when token is missing", func(t *testing.T) {
+		t.Parallel()
+		a := assert.New(t)
+		server := web.NewServer()
+		svc := new(MockService)
+		handler := NewHandler(server, svc, &common.Logger{Logger: zap.NewNop()})
+		handler.RegisterRoutes()
+
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/page?page_number=0&page_size=10", nil)
+		resp, err := server.App.Test(req, -1)
+		a.Nil(err)
+		defer resp.Body.Close()
+
+		a.Equal(fiber.StatusUnauthorized, resp.StatusCode)
+	})
+
+	t.Run("Should return 401 when expired token", func(t *testing.T) {
+		t.Parallel()
+		a := assert.New(t)
+		server := web.NewServer()
+
+		expiredClaims := &web.IdmClaims{
+			RegisteredClaims: jwt.RegisteredClaims{
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(-2 * time.Hour)),
+			},
+			RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmUser}},
+		}
+		expiredToken := &jwt.Token{
+			Claims: expiredClaims,
+			Method: jwt.SigningMethodHS256,
+		}
+		auth := func(c *fiber.Ctx) error {
+			c.Locals(web.JwtKey, expiredToken)
+			return c.Next()
+		}
+
+		server.GroupApi.Use(auth)
+		svc := new(MockService)
+		handler := NewHandler(server, svc, &common.Logger{Logger: zap.NewNop()})
+		handler.RegisterRoutes()
+		expectedResponse := PageResponse{
+			Result:     []Response{{Id: 1, Name: "John"}},
+			TextFilter: "",
+			PageSize:   10,
+			PageNum:    0,
+			Total:      100,
+		}
+		svc.On("FindAllWithLimitOffset",
+			mock.Anything,
+			mock.MatchedBy(func(req PageRequest) bool {
+				return req.PageNumber == 0 && req.PageSize == 10
+			}),
+		).Return(expectedResponse, nil)
+		req := httptest.NewRequest(
+			http.MethodGet,
+			"/api/v1/employees/page?page_number=0&page_size=10",
+			nil,
+		)
+		resp, err := server.App.Test(req, -1) // -1 — без таймаута
+		a.Nil(err)
+		defer resp.Body.Close()
+		a.Equal(fiber.StatusUnauthorized, resp.StatusCode)
+	})
 }

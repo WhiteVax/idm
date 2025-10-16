@@ -318,6 +318,18 @@ const docTemplate = `{
                             "$ref": "#/definitions/employee.PageResponse"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized or token expired",
+                        "schema": {
+                            "$ref": "#/definitions/employee.PageResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Permission denied",
+                        "schema": {
+                            "$ref": "#/definitions/employee.PageResponse"
+                        }
+                    },
                     "408": {
                         "description": "time out request",
                         "schema": {

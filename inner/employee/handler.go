@@ -298,11 +298,22 @@ func (c *Handler) FindAll(ctx *fiber.Ctx) error {
 // @Failure 400 {object} PageResponse[]
 // @Failure 408 {object} PageResponse[] "time out request"
 // @Failure 500 {object} PageResponse[] "db error"
+// @Failure 401 {object} PageResponse[] "Unauthorized or token expired"
+// @Failure 403 {object} PageResponse[] "Permission denied"
 // @Router /employees/page [get]
 // @Security BearerAuth
 func (c *Handler) FindByPagesWithFilter(ctx *fiber.Ctx) error {
-	var token = ctx.Locals(web.JwtKey).(*jwt.Token)
-	var claims = token.Claims.(*web.IdmClaims)
+	jwtToken, ok := ctx.Locals(web.JwtKey).(*jwt.Token)
+	if !ok || jwtToken == nil {
+		return common.ErrResponse(ctx, fiber.StatusUnauthorized, "Unauthorized")
+	}
+	claims, ok := jwtToken.Claims.(*web.IdmClaims)
+	if !ok || claims == nil {
+		return common.ErrResponse(ctx, fiber.StatusUnauthorized, "Unauthorized")
+	}
+	if claims.ExpiresAt != nil && time.Now().After(claims.ExpiresAt.Time) {
+		return common.ErrResponse(ctx, fiber.StatusUnauthorized, "Token expired")
+	}
 	if !slices.Contains(claims.RealmAccess.Roles, web.IdmUser) {
 		return common.ErrResponse(ctx, fiber.StatusForbidden, "Permission denied")
 	}
