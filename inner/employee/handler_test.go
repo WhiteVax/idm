@@ -557,7 +557,7 @@ func TestFindByIdsEmployees(t *testing.T) {
 
 		expected := []Response{{Id: 1}, {Id: 2}}
 		input := []int64{1, 2}
-		svc.On("FindByIds", input).Return(expected, nil).Once()
+		svc.On("FindByIds", mock.Anything, input).Return(expected, nil).Once()
 
 		body, _ := json.Marshal(input)
 		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees/ids", bytes.NewReader(body))
@@ -594,7 +594,7 @@ func TestFindByIdsEmployees(t *testing.T) {
 		handler.RegisterRoutes()
 		expected := []Response{{Id: 0}}
 		input := []int64{1, 2}
-		svc.On("FindByIds", input).Return(expected, errors.New("service error")).Once()
+		svc.On("FindByIds", mock.Anything, input).Return(expected, errors.New("service error")).Once()
 		body, _ := json.Marshal(input)
 		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees/ids", bytes.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
@@ -648,7 +648,7 @@ func TestFindByIdEmployee(t *testing.T) {
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
 
-		svc.On("FindById", int64(2)).Return(Response{Id: 2}, nil)
+		svc.On("FindById", mock.Anything, int64(2)).Return(Response{Id: 2}, nil)
 		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees/2", nil)
 		resp, err := server.App.Test(req)
 		a.Nil(err)
@@ -663,7 +663,7 @@ func TestFindByIdEmployee(t *testing.T) {
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
 
-		svc.On("FindById", int64(0)).Return(Response{Id: 0}, nil)
+		svc.On("FindById", mock.Anything, int64(0)).Return(Response{Id: 0}, nil)
 		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees/a", nil)
 		resp, err := server.App.Test(req)
 		a.Nil(err)
@@ -678,7 +678,7 @@ func TestFindByIdEmployee(t *testing.T) {
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
 
-		svc.On("FindById", int64(0)).Return(Response{Id: 0}, errors.New("db failure"))
+		svc.On("FindById", mock.Anything, int64(0)).Return(Response{Id: 0}, errors.New("db failure"))
 		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees/0", nil)
 		resp, err := server.App.Test(req, -1)
 		a.Nil(err)
@@ -700,7 +700,7 @@ func TestFindByIdEmployee(t *testing.T) {
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
 
-		svc.On("FindById", int64(0)).Return(Response{Id: 0}, nil)
+		svc.On("FindById", mock.Anything, int64(0)).Return(Response{Id: 0}, nil)
 		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees/a", nil)
 		resp, err := server.App.Test(req)
 		a.Nil(err)
@@ -730,7 +730,7 @@ func TestFindAllEmployees(t *testing.T) {
 		handler.RegisterRoutes()
 
 		expected := []Response{{Id: 1}, {Id: 2}}
-		svc.On("FindAll").Return(expected, nil)
+		svc.On("FindAll", mock.Anything).Return(expected, nil)
 		req := httptest.NewRequest(fiber.MethodGet, "/api/v1/employees", nil)
 
 		resp, err := server.App.Test(req)
@@ -747,7 +747,7 @@ func TestFindAllEmployees(t *testing.T) {
 		handler.RegisterRoutes()
 
 		expected := []Response{{Id: 1}, {Id: 2}}
-		svc.On("FindAll").Return(expected, errors.New("db failure"))
+		svc.On("FindAll", mock.Anything).Return(expected, errors.New("db failure"))
 		req := httptest.NewRequest(fiber.MethodGet, "/api/v1/employees", nil)
 
 		resp, err := server.App.Test(req)
@@ -771,7 +771,7 @@ func TestFindAllEmployees(t *testing.T) {
 		handler.RegisterRoutes()
 
 		expected := []Response{{Id: 1}, {Id: 2}}
-		svc.On("FindAll").Return(expected, nil)
+		svc.On("FindAll", mock.Anything).Return(expected, nil)
 		req := httptest.NewRequest(fiber.MethodGet, "/api/v1/employees", nil)
 
 		resp, err := server.App.Test(req)
