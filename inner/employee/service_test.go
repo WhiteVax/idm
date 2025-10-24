@@ -70,7 +70,7 @@ func (m *MockEmployeeRepo) FindWithLimitOffsetAndFilter(ctx context.Context, lim
 
 func TestFindById(t *testing.T) {
 	a := assert.New(t)
-
+	ctx := context.Background()
 	t.Run("Should return found employee", func(t *testing.T) {
 		t.Parallel()
 		repo := new(MockEmployeeRepo)
@@ -87,7 +87,7 @@ func TestFindById(t *testing.T) {
 
 		want := entity.ToResponse()
 		repo.On("FindById", int64(1)).Return(entity, nil)
-		got, err := svc.FindById(1)
+		got, err := svc.FindById(ctx, 1)
 
 		a.Nil(err)
 		a.Equal(want, got)
@@ -99,7 +99,7 @@ func TestFindById(t *testing.T) {
 		repo := new(MockEmployeeRepo)
 		svc := NewService(repo)
 
-		got, err := svc.FindById(0)
+		got, err := svc.FindById(ctx, 0)
 
 		a.Error(err)
 		a.Equal(Response{}, got)
@@ -108,7 +108,7 @@ func TestFindById(t *testing.T) {
 
 func TestServiceAdd(t *testing.T) {
 	a := assert.New(t)
-
+	ctx := context.Background()
 	t.Run("Should add employee", func(t *testing.T) {
 		t.Parallel()
 		db, mockTr, err := sqlmock.New()
@@ -135,7 +135,7 @@ func TestServiceAdd(t *testing.T) {
 		repo.On("Add", tx, mock.MatchedBy(func(e Entity) bool {
 			return e.Name == "John" && e.Surname == "Doe" && e.Age == 30
 		})).Return(int64(1), nil)
-		rsl, err := svc.Add(employee)
+		rsl, err := svc.Add(ctx, employee)
 		a.Nil(err)
 		a.Equal(employee.Name, rsl.Name)
 		a.Equal(employee.Surname, rsl.Surname)
@@ -166,7 +166,7 @@ func TestServiceAdd(t *testing.T) {
 		}
 		repo.On("BeginTr").Return(tx, nil)
 		repo.On("FindByNameAndSurname", tx, duplicated.Name, duplicated.Surname).Return(true, nil)
-		rsl, err := svc.Add(duplicated)
+		rsl, err := svc.Add(ctx, duplicated)
 		a.Error(err)
 		expectedError := fmt.Sprintf("Employee with name '%s' and surname '%s' already exists", duplicated.Name, duplicated.Surname)
 		a.Contains(err.Error(), expectedError)
@@ -179,7 +179,7 @@ func TestServiceAdd(t *testing.T) {
 		t.Parallel()
 		repo := new(MockEmployeeRepo)
 		svc := NewService(repo)
-		rsl, err := svc.Add(Entity{})
+		rsl, err := svc.Add(ctx, Entity{})
 		a.Error(err)
 		a.Contains(err.Error(), "Entity is empty")
 		a.Equal(Response{}, rsl)
@@ -194,7 +194,7 @@ func TestServiceAdd(t *testing.T) {
 			Surname: "Doe",
 			Age:     15,
 		}
-		rsl, err := svc.Add(badEmployee)
+		rsl, err := svc.Add(ctx, badEmployee)
 		a.Error(err)
 		a.Contains(err.Error(), "Invalid field")
 		a.Equal(Response{}, rsl)
@@ -213,7 +213,7 @@ func TestServiceAdd(t *testing.T) {
 		}
 		repo.On("BeginTr").Return(nil, fmt.Errorf("tx error"))
 
-		rsl, err := svc.Add(employee)
+		rsl, err := svc.Add(ctx, employee)
 		a.Error(err)
 		a.Contains(err.Error(), "Failed to begin transaction")
 		a.Equal(Response{}, rsl)
@@ -236,10 +236,11 @@ func TestDeleteById(t *testing.T) {
 	a := assert.New(t)
 	repo := new(MockEmployeeRepo)
 	svc := NewService(repo)
+	ctx := context.Background()
 	t.Run("Should delete employee", func(t *testing.T) {
 		t.Parallel()
 		repo.On("DeleteById", int64(1)).Return(true, nil)
-		got, err := svc.DeleteById(1)
+		got, err := svc.DeleteById(ctx, 1)
 		a.Nil(err)
 		a.Equal(Response{Id: 1}, got)
 	})
@@ -247,7 +248,7 @@ func TestDeleteById(t *testing.T) {
 	t.Run("Should return error if id <= 0", func(t *testing.T) {
 		t.Parallel()
 		repo.On("DeleteById", int64(0)).Return(false, errors.New("Wrong id: 1"))
-		got, err := svc.DeleteById(0)
+		got, err := svc.DeleteById(ctx, 0)
 		a.Equal(Response{}, got)
 		a.Error(err)
 	})
@@ -255,7 +256,7 @@ func TestDeleteById(t *testing.T) {
 	t.Run("Should return error if any employee field is empty", func(t *testing.T) {
 		t.Parallel()
 		repo.On("DeleteById", int64(5)).Return(false, errors.New("Error deleting employee with id"))
-		got, err := svc.DeleteById(5)
+		got, err := svc.DeleteById(ctx, 5)
 		a.Equal(Response{}, got)
 		a.Error(err)
 	})
@@ -265,7 +266,7 @@ func TestFindByIds(t *testing.T) {
 	a := assert.New(t)
 	mockRepo := new(MockEmployeeRepo)
 	svc := NewService(mockRepo)
-
+	ctx := context.Background()
 	t.Run("Should return finding employees", func(t *testing.T) {
 		t.Parallel()
 		stub := &StubRepoEmployee{
@@ -292,7 +293,7 @@ func TestFindByIds(t *testing.T) {
 		ids := []int64{1, 2}
 		mockRepo.On("FindBySliceIds", ids).Return(stub.Employees, nil)
 
-		got, err := svc.FindByIds(ids)
+		got, err := svc.FindByIds(ctx, ids)
 		a.Nil(err)
 		a.Len(got, 2)
 		a.Equal(got[0].Id, int64(1))
@@ -302,7 +303,7 @@ func TestFindByIds(t *testing.T) {
 
 	t.Run("Should return error if any employee field is empty", func(t *testing.T) {
 		t.Parallel()
-		got, err := svc.FindByIds([]int64{})
+		got, err := svc.FindByIds(ctx, []int64{})
 		a.Empty(got)
 		a.Error(err)
 	})
@@ -312,11 +313,12 @@ func TestDeleteByIds(t *testing.T) {
 	a := assert.New(t)
 	mockRepo := new(MockEmployeeRepo)
 	svc := NewService(mockRepo)
+	ctx := context.Background()
 	t.Run("Should delete employee", func(t *testing.T) {
 		t.Parallel()
 		ids := []int64{1, 2}
 		mockRepo.On("DeleteBySliceIds", ids).Return(ids, nil)
-		got, err := svc.DeleteByIds(ids)
+		got, err := svc.DeleteByIds(ctx, ids)
 		expected := []Response{{Id: 1}, {Id: 2}}
 		a.Nil(err)
 		a.Equal(expected, got)
@@ -326,7 +328,7 @@ func TestDeleteByIds(t *testing.T) {
 		t.Parallel()
 		var ids []int64
 		mockRepo.On("DeleteBySliceIds", ids).Return(nil, errors.New("Wrong ids"))
-		got, err := svc.DeleteByIds(ids)
+		got, err := svc.DeleteByIds(ctx, ids)
 		a.Empty(got)
 		a.Error(err)
 	})

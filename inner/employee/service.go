@@ -12,6 +12,7 @@ import (
 type Service struct {
 	repo      Repo
 	validator *validator.Validate
+	logger    *common.Logger
 }
 
 type Repo interface {
@@ -34,7 +35,7 @@ func NewService(repo Repo) *Service {
 	return &Service{repo: repo, validator: validator.New()}
 }
 
-func (svc *Service) FindById(id int64) (Response, error) {
+func (svc *Service) FindById(ctx context.Context, id int64) (Response, error) {
 	if id <= 0 {
 		return Response{}, fmt.Errorf("Wrong id: %d", id)
 	}
@@ -45,7 +46,7 @@ func (svc *Service) FindById(id int64) (Response, error) {
 	return entity.ToResponse(), nil
 }
 
-func (svc *Service) Add(employee Entity) (response Response, err error) {
+func (svc *Service) Add(ctx context.Context, employee Entity) (response Response, err error) {
 	if employee == (Entity{}) {
 		return Response{}, fmt.Errorf("Entity is empty, please check the employee")
 	}
@@ -101,7 +102,7 @@ func (svc *Service) Add(employee Entity) (response Response, err error) {
 	}, nil
 }
 
-func (svc *Service) CreateEmployee(request CreateRequest) (int64, error) {
+func (svc *Service) CreateEmployee(ctx context.Context, request CreateRequest) (int64, error) {
 
 	var err = svc.validator.Struct(request)
 	if err != nil {
@@ -153,7 +154,7 @@ func (svc *Service) CreateEmployee(request CreateRequest) (int64, error) {
 	return newEmployeeId, err
 }
 
-func (svc *Service) FindByIds(ids []int64) ([]Response, error) {
+func (svc *Service) FindByIds(ctx context.Context, ids []int64) ([]Response, error) {
 	if len(ids) == 0 {
 		return []Response{}, fmt.Errorf("No employees ids provided")
 	}
@@ -169,7 +170,7 @@ func (svc *Service) FindByIds(ids []int64) ([]Response, error) {
 	return responses, nil
 }
 
-func (svc *Service) DeleteByIds(ids []int64) ([]Response, error) {
+func (svc *Service) DeleteByIds(ctx context.Context, ids []int64) ([]Response, error) {
 	if len(ids) == 0 {
 		return []Response{}, fmt.Errorf("No employees ids provided")
 	}
@@ -184,7 +185,7 @@ func (svc *Service) DeleteByIds(ids []int64) ([]Response, error) {
 	return responses, nil
 }
 
-func (svc *Service) DeleteById(id int64) (Response, error) {
+func (svc *Service) DeleteById(ctx context.Context, id int64) (Response, error) {
 	if id <= 0 {
 		return Response{}, fmt.Errorf("Wrong id: %d", id)
 	}

@@ -26,38 +26,38 @@ type MockService struct {
 	mock.Mock
 }
 
-func (svc *MockService) Add(employee Entity) (response Response, err error) {
-	args := svc.Called(employee)
+func (svc *MockService) Add(ctx context.Context, employee Entity) (response Response, err error) {
+	args := svc.Called(ctx, employee)
 	return args.Get(0).(Response), args.Error(1)
 }
 
-func (svc *MockService) FindByIds(ids []int64) ([]Response, error) {
-	args := svc.Called(ids)
+func (svc *MockService) FindByIds(ctx context.Context, ids []int64) ([]Response, error) {
+	args := svc.Called(ctx, ids)
 	return args.Get(0).([]Response), args.Error(1)
 }
 
-func (svc *MockService) DeleteByIds(ids []int64) ([]Response, error) {
-	args := svc.Called(ids)
+func (svc *MockService) DeleteByIds(ctx context.Context, ids []int64) ([]Response, error) {
+	args := svc.Called(ctx, ids)
 	return args.Get(0).([]Response), args.Error(1)
 }
 
-func (svc *MockService) DeleteById(id int64) (Response, error) {
-	args := svc.Called(id)
+func (svc *MockService) DeleteById(ctx context.Context, id int64) (Response, error) {
+	args := svc.Called(ctx, id)
 	return args.Get(0).(Response), args.Error(1)
 }
 
-func (svc *MockService) FindAll(context.Context) (employees []Response, err error) {
-	args := svc.Mock.Called()
+func (svc *MockService) FindAll(ctx context.Context) (employees []Response, err error) {
+	args := svc.Called(ctx)
 	return args.Get(0).([]Response), args.Error(1)
 }
 
-func (svc *MockService) FindById(id int64) (Response, error) {
-	args := svc.Called(id)
+func (svc *MockService) FindById(ctx context.Context, id int64) (Response, error) {
+	args := svc.Called(ctx, id)
 	return args.Get(0).(Response), args.Error(1)
 }
 
-func (svc *MockService) CreateEmployee(request CreateRequest) (int64, error) {
-	args := svc.Called(request)
+func (svc *MockService) CreateEmployee(ctx context.Context, request CreateRequest) (int64, error) {
+	args := svc.Called(ctx, request)
 	return args.Get(0).(int64), args.Error(1)
 }
 

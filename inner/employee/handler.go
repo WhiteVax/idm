@@ -22,12 +22,12 @@ type Handler struct {
 }
 
 type Svc interface {
-	Add(employee Entity) (response Response, err error)
-	FindById(id int64) (Response, error)
-	CreateEmployee(request CreateRequest) (int64, error)
-	FindByIds(ids []int64) ([]Response, error)
-	DeleteByIds(ids []int64) ([]Response, error)
-	DeleteById(id int64) (Response, error)
+	Add(ctx context.Context, employee Entity) (response Response, err error)
+	FindById(ctx context.Context, id int64) (Response, error)
+	CreateEmployee(ctx context.Context, request CreateRequest) (int64, error)
+	FindByIds(ctx context.Context, ids []int64) ([]Response, error)
+	DeleteByIds(ctx context.Context, ids []int64) ([]Response, error)
+	DeleteById(ctx context.Context, id int64) (Response, error)
 	FindAll(ctx context.Context) (employees []Response, err error)
 	FindAllWithLimitOffset(ctx context.Context, req PageRequest) (result PageResponse, err error)
 }
@@ -72,13 +72,13 @@ func (c *Handler) CreateEmployee(ctx *fiber.Ctx) error {
 	}
 	var request CreateRequest
 	if err := ctx.BodyParser(&request); err != nil {
-		c.logger.Error("CreateEmployee: : error body parse", zap.Error(err))
+		c.logger.ErrorCtx(ctx.Context(), "CreateEmployee: : error body parse", zap.Error(err))
 		return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
 	}
-	c.logger.Debug("CreateEmployee: receive request", zap.Any("request", request))
-	var newEmployeeId, err = c.employeeService.CreateEmployee(request)
+	c.logger.DebugCtx(ctx.Context(), "Create employee: received request", zap.Any("request", request))
+	var newEmployeeId, err = c.employeeService.CreateEmployee(ctx.Context(), request)
 	if err != nil {
-		c.logger.Error("CreateEmployee: error creating", zap.Error(err))
+		c.logger.ErrorCtx(ctx.Context(), "CreateEmployee: error creating", zap.Error(err))
 		switch {
 		case errors.As(err, &common.RequestValidationError{}) || errors.As(err, &common.AlreadyExistsError{}):
 			return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
@@ -109,15 +109,15 @@ func (c *Handler) AddEmployee(ctx *fiber.Ctx) error {
 	}
 	var entity Entity
 	if err := ctx.BodyParser(&entity); err != nil {
-		c.logger.Error("AddEmployee: : error body parse", zap.Error(err))
+		c.logger.ErrorCtx(ctx.Context(), "AddEmployee: : error body parse", zap.Error(err))
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "invalid request body",
 		})
 	}
-	c.logger.Debug("AddEmployee: receive entity", zap.Any("entity", entity))
-	var newEmployeeId, err = c.employeeService.Add(entity)
+	c.logger.DebugCtx(ctx.Context(), "AddEmployee: receive entity", zap.Any("entity", entity))
+	var newEmployeeId, err = c.employeeService.Add(ctx.Context(), entity)
 	if err != nil {
-		c.logger.Error("AddEmployee: error adding", zap.Error(err))
+		c.logger.ErrorCtx(ctx.Context(), "AddEmployee: error adding", zap.Error(err))
 		return common.ErrResponse(ctx, fiber.StatusInternalServerError, err.Error())
 	}
 	return common.OkResponse(ctx, newEmployeeId)
@@ -144,13 +144,13 @@ func (c *Handler) FindById(ctx *fiber.Ctx) error {
 	idParam := ctx.Params("id")
 	id, err := strconv.ParseInt(idParam, 10, 64)
 	if err != nil {
-		c.logger.Error("FindById: : error body parse", zap.Error(err))
+		c.logger.ErrorCtx(ctx.Context(), "FindById: : error body parse", zap.Error(err))
 		return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
 	}
-	c.logger.Debug("FindById: receive idParam", zap.Any("idParam", idParam))
-	employee, err := c.employeeService.FindById(id)
+	c.logger.DebugCtx(ctx.Context(), "FindById: receive idParam", zap.Any("idParam", idParam))
+	employee, err := c.employeeService.FindById(ctx.Context(), id)
 	if err != nil {
-		c.logger.Error("FindById: error finding", zap.Error(err))
+		c.logger.ErrorCtx(ctx.Context(), "FindById: error finding", zap.Error(err))
 		return common.ErrResponse(ctx, fiber.StatusInternalServerError, err.Error())
 	}
 	return common.OkResponse(ctx, employee)
@@ -176,13 +176,13 @@ func (c *Handler) FindByIds(ctx *fiber.Ctx) error {
 	}
 	var ids []int64
 	if err := ctx.BodyParser(&ids); err != nil {
-		c.logger.Error("FindByIds: : error body parse", zap.Error(err))
+		c.logger.ErrorCtx(ctx.Context(), "FindByIds: : error body parse", zap.Error(err))
 		return common.ErrResponse(ctx, fiber.StatusBadRequest, "Invalid request body")
 	}
-	c.logger.Debug("FindByIds: receive ids", zap.Any("ids", ids))
-	employees, err := c.employeeService.FindByIds(ids)
+	c.logger.DebugCtx(ctx.Context(), "FindByIds: receive ids", zap.Any("ids", ids))
+	employees, err := c.employeeService.FindByIds(ctx.Context(), ids)
 	if err != nil {
-		c.logger.Error("FindByIds: error finding", zap.Error(err))
+		c.logger.ErrorCtx(ctx.Context(), "FindByIds: error finding", zap.Error(err))
 		return common.ErrResponse(ctx, fiber.StatusInternalServerError, "Error finding employees")
 	}
 	return common.OkResponse(ctx, employees)
@@ -209,13 +209,13 @@ func (c *Handler) DeleteById(ctx *fiber.Ctx) error {
 	idParam := ctx.Params("id")
 	id, err := strconv.ParseInt(idParam, 10, 64)
 	if err != nil {
-		c.logger.Error("DeleteById: : error body parse", zap.Error(err))
+		c.logger.ErrorCtx(ctx.Context(), "DeleteById: : error body parse", zap.Error(err))
 		return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
 	}
-	c.logger.Debug("DeleteById: receive idParam", zap.Any("idParam", idParam))
-	rsl, err := c.employeeService.DeleteById(id)
+	c.logger.DebugCtx(ctx.Context(), "DeleteById: receive idParam", zap.Any("idParam", idParam))
+	rsl, err := c.employeeService.DeleteById(ctx.Context(), id)
 	if err != nil {
-		c.logger.Error("DeleteById: error deleting", zap.Error(err))
+		c.logger.ErrorCtx(ctx.Context(), "DeleteById: error deleting", zap.Error(err))
 		return common.ErrResponse(ctx, fiber.StatusInternalServerError, err.Error())
 	}
 	return common.OkResponse(ctx, rsl)
@@ -242,13 +242,13 @@ func (c *Handler) DeleteByIds(ctx *fiber.Ctx) error {
 	bodyBytes := ctx.Body()
 	var ids []int64
 	if err := json.Unmarshal(bodyBytes, &ids); err != nil {
-		c.logger.Error("DeleteByIds: : error body parse", zap.Error(err))
+		c.logger.ErrorCtx(ctx.Context(), "DeleteByIds: : error body parse", zap.Error(err))
 		return common.ErrResponse(ctx, fiber.StatusBadRequest, "Invalid request body")
 	}
-	c.logger.Debug("DeleteByIds: receive ids", zap.Any("ids", ids))
-	rsl, err := c.employeeService.DeleteByIds(ids)
+	c.logger.DebugCtx(ctx.Context(), "DeleteByIds: receive ids", zap.Any("ids", ids))
+	rsl, err := c.employeeService.DeleteByIds(ctx.Context(), ids)
 	if err != nil {
-		c.logger.Error("DeleteByIds: error deleting", zap.Error(err))
+		c.logger.ErrorCtx(ctx.Context(), "DeleteByIds: error deleting", zap.Error(err))
 		return common.ErrResponse(ctx, fiber.StatusInternalServerError, err.Error())
 	}
 	return common.OkResponse(ctx, rsl)
@@ -276,10 +276,10 @@ func (c *Handler) FindAll(ctx *fiber.Ctx) error {
 	employees, err := c.employeeService.FindAll(con)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			c.logger.Error("FindAll: request timeout", zap.Error(err))
+			c.logger.ErrorCtx(ctx.Context(), "FindAll: request timeout", zap.Error(err))
 			return ctx.Status(fiber.StatusRequestTimeout).JSON(fiber.Map{"Error": "request timeout"})
 		}
-		c.logger.Error("FindAll: error finding", zap.Error(err))
+		c.logger.ErrorCtx(ctx.Context(), "FindAll: error finding", zap.Error(err))
 		return common.ErrResponse(ctx, fiber.StatusInternalServerError, err.Error())
 	}
 	return common.OkResponse(ctx, employees)
@@ -319,10 +319,10 @@ func (c *Handler) FindByPagesWithFilter(ctx *fiber.Ctx) error {
 	}
 	var request PageRequest
 	if err := ctx.QueryParser(&request); err != nil {
-		c.logger.Error("FindByPagesWithFilter: query parse error", zap.Error(err))
+		c.logger.ErrorCtx(ctx.Context(), "FindByPagesWithFilter: query parse error", zap.Error(err))
 		return common.ErrResponse(ctx, fiber.StatusBadRequest, "Invalid query parameters")
 	}
-	c.logger.Debug("FindByPagesWithFilter: received page request", zap.Any("request", request))
+	c.logger.DebugCtx(ctx.Context(), "FindByPagesWithFilter: received page request", zap.Any("request", request))
 
 	con, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
@@ -330,14 +330,14 @@ func (c *Handler) FindByPagesWithFilter(ctx *fiber.Ctx) error {
 	if err != nil {
 		var validationErr common.RequestValidationError
 		if ok := errors.As(err, &validationErr); ok {
-			c.logger.Error("FindByPagesWithFilter: validation error", zap.Error(err))
+			c.logger.ErrorCtx(ctx.Context(), "FindByPagesWithFilter: validation error", zap.Error(err))
 			return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
 		}
 		if errors.Is(err, context.DeadlineExceeded) {
-			c.logger.Error("FindByPagesWithFilter: request timeout", zap.Error(err))
+			c.logger.ErrorCtx(ctx.Context(), "FindByPagesWithFilter: request timeout", zap.Error(err))
 			return ctx.Status(fiber.StatusRequestTimeout).JSON(fiber.Map{"error": "request timeout"})
 		}
-		c.logger.Error("FindByPagesWithFilter: internal error", zap.Error(err))
+		c.logger.ErrorCtx(ctx.Context(), "FindByPagesWithFilter: internal error", zap.Error(err))
 		return common.ErrResponse(ctx, fiber.StatusInternalServerError, err.Error())
 	}
 	return common.OkResponse(ctx, employees)
