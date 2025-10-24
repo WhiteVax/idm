@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/jmoiron/sqlx"
+	"go.uber.org/zap"
 )
 
 type Service struct {
@@ -37,6 +38,7 @@ func NewService(repo Repo) *Service {
 
 func (svc *Service) FindById(ctx context.Context, id int64) (Response, error) {
 	if id <= 0 {
+		svc.logger.ErrorCtx(ctx, "Wrong id in FindById", zap.Any("id", id))
 		return Response{}, fmt.Errorf("Wrong id: %d", id)
 	}
 	var entity, err = svc.repo.FindById(id)
