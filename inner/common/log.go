@@ -16,6 +16,11 @@ type Logger struct {
 	*zap.Logger
 }
 
+type LoggerInterface interface {
+	DebugCtx(ctx context.Context, msg string, fields ...zap.Field)
+	ErrorCtx(ctx context.Context, msg string, fields ...zap.Field)
+}
+
 func NewLogger(cfg Config) *Logger {
 	var zapEncoderCfg = zapcore.EncoderConfig{
 		TimeKey:          "timestamp",

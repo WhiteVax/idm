@@ -11,6 +11,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"go.uber.org/zap"
 )
 
 type MockEmployeeRepo struct {
@@ -68,13 +69,19 @@ func (m *MockEmployeeRepo) FindWithLimitOffsetAndFilter(ctx context.Context, lim
 	return args.Get(0).([]Entity), args.Get(1).(int64), args.Error(2)
 }
 
+type MockLogger struct{}
+
+func (m *MockLogger) DebugCtx(ctx context.Context, msg string, fields ...zap.Field) {}
+func (m *MockLogger) ErrorCtx(ctx context.Context, msg string, fields ...zap.Field) {}
+
 func TestFindById(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
+	mockLogger := &MockLogger{}
 	t.Run("Should return found employee", func(t *testing.T) {
 		t.Parallel()
 		repo := new(MockEmployeeRepo)
-		svc := NewService(repo)
+		svc := NewService(repo, mockLogger)
 
 		entity := Entity{
 			Id:        int64(1),
@@ -97,7 +104,7 @@ func TestFindById(t *testing.T) {
 	t.Run("Should return error if id <= 0", func(t *testing.T) {
 		t.Parallel()
 		repo := new(MockEmployeeRepo)
-		svc := NewService(repo)
+		svc := NewService(repo, mockLogger)
 
 		got, err := svc.FindById(ctx, 0)
 
@@ -109,6 +116,7 @@ func TestFindById(t *testing.T) {
 func TestServiceAdd(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
+	mockLogger := &MockLogger{}
 	t.Run("Should add employee", func(t *testing.T) {
 		t.Parallel()
 		db, mockTr, err := sqlmock.New()
@@ -116,7 +124,7 @@ func TestServiceAdd(t *testing.T) {
 		defer db.Close()
 
 		repo := new(MockEmployeeRepo)
-		svc := NewService(repo)
+		svc := NewService(repo, mockLogger)
 		sqlxDB := sqlx.NewDb(db, "sqlmock_db")
 		mockTr.ExpectBegin()
 		mockTr.ExpectCommit()
@@ -150,7 +158,7 @@ func TestServiceAdd(t *testing.T) {
 		a.Nil(err)
 		defer db.Close()
 		repo := new(MockEmployeeRepo)
-		svc := NewService(repo)
+		svc := NewService(repo, mockLogger)
 		sqlxDB := sqlx.NewDb(db, "sqlmock_db")
 		mockTr.ExpectBegin()
 		mockTr.ExpectRollback()
@@ -178,7 +186,7 @@ func TestServiceAdd(t *testing.T) {
 	t.Run("Should fail on empty entity", func(t *testing.T) {
 		t.Parallel()
 		repo := new(MockEmployeeRepo)
-		svc := NewService(repo)
+		svc := NewService(repo, mockLogger)
 		rsl, err := svc.Add(ctx, Entity{})
 		a.Error(err)
 		a.Contains(err.Error(), "Entity is empty")
@@ -188,7 +196,7 @@ func TestServiceAdd(t *testing.T) {
 	t.Run("Should fail on invalid fields", func(t *testing.T) {
 		t.Parallel()
 		repo := new(MockEmployeeRepo)
-		svc := NewService(repo)
+		svc := NewService(repo, mockLogger)
 		badEmployee := Entity{
 			Name:    "",
 			Surname: "Doe",
@@ -203,7 +211,7 @@ func TestServiceAdd(t *testing.T) {
 	t.Run("Should fail on transaction begin error", func(t *testing.T) {
 		t.Parallel()
 		repo := new(MockEmployeeRepo)
-		svc := NewService(repo)
+		svc := NewService(repo, mockLogger)
 		employee := Entity{
 			Name:      "John",
 			Surname:   "Doe",
@@ -223,7 +231,8 @@ func TestServiceAdd(t *testing.T) {
 func TestFindAll(t *testing.T) {
 	a := assert.New(t)
 	repo := new(MockEmployeeRepo)
-	svc := NewService(repo)
+	mockLogger := &MockLogger{}
+	svc := NewService(repo, mockLogger)
 	t.Run("Should find empty slice employees", func(t *testing.T) {
 		repo.On("FindAll").Return([]Entity(nil), nil)
 		got, err := svc.FindAll(context.Background())
@@ -235,7 +244,8 @@ func TestFindAll(t *testing.T) {
 func TestDeleteById(t *testing.T) {
 	a := assert.New(t)
 	repo := new(MockEmployeeRepo)
-	svc := NewService(repo)
+	mockLogger := &MockLogger{}
+	svc := NewService(repo, mockLogger)
 	ctx := context.Background()
 	t.Run("Should delete employee", func(t *testing.T) {
 		t.Parallel()
@@ -265,7 +275,8 @@ func TestDeleteById(t *testing.T) {
 func TestFindByIds(t *testing.T) {
 	a := assert.New(t)
 	mockRepo := new(MockEmployeeRepo)
-	svc := NewService(mockRepo)
+	mockLogger := &MockLogger{}
+	svc := NewService(mockRepo, mockLogger)
 	ctx := context.Background()
 	t.Run("Should return finding employees", func(t *testing.T) {
 		t.Parallel()
@@ -312,7 +323,8 @@ func TestFindByIds(t *testing.T) {
 func TestDeleteByIds(t *testing.T) {
 	a := assert.New(t)
 	mockRepo := new(MockEmployeeRepo)
-	svc := NewService(mockRepo)
+	mockLogger := &MockLogger{}
+	svc := NewService(mockRepo, mockLogger)
 	ctx := context.Background()
 	t.Run("Should delete employee", func(t *testing.T) {
 		t.Parallel()

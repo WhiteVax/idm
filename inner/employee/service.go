@@ -13,7 +13,7 @@ import (
 type Service struct {
 	repo      Repo
 	validator *validator.Validate
-	logger    *common.Logger
+	logger    common.LoggerInterface
 }
 
 type Repo interface {
@@ -32,8 +32,12 @@ type Validator interface {
 	Validate(request any) error
 }
 
-func NewService(repo Repo) *Service {
-	return &Service{repo: repo, validator: validator.New()}
+func NewService(repo Repo, logger common.LoggerInterface) *Service {
+	return &Service{
+		repo:      repo,
+		validator: validator.New(),
+		logger:    logger,
+	}
 }
 
 func (svc *Service) FindById(ctx context.Context, id int64) (Response, error) {
