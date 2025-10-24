@@ -97,7 +97,7 @@ func TestCreateEmployee(t *testing.T) {
 		}`, now, now))
 		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees", body)
 		req.Header.Set("Content-Type", "application/json")
-		svc.On("CreateEmployee", mock.AnythingOfType("employee.CreateRequest")).Return(int64(123), nil)
+		svc.On("CreateEmployee", mock.Anything, mock.AnythingOfType("employee.CreateRequest")).Return(int64(123), nil)
 		resp, err := server.App.Test(req)
 		a.Nil(err)
 		a.NotNil(resp)
@@ -143,7 +143,7 @@ func TestCreateEmployee(t *testing.T) {
 			"created_at": "%s",
 			"updated_at": "%s"
 		}`, now, now))
-		svc.On("CreateEmployee", mock.Anything).Return(int64(0), common.AlreadyExistsError{Message: "employee already exists"})
+		svc.On("CreateEmployee", mock.Anything, mock.Anything).Return(int64(0), common.AlreadyExistsError{Message: "employee already exists"})
 		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees", body)
 		req.Header.Set("Content-Type", "application/json")
 		resp, err := server.App.Test(req)
@@ -166,7 +166,7 @@ func TestCreateEmployee(t *testing.T) {
 			"created_at": "%s",
 			"updated_at": "%s"
 		}`, now, now))
-		svc.On("CreateEmployee", mock.Anything).Return(int64(0), errors.New("db connection error"))
+		svc.On("CreateEmployee", mock.Anything, mock.Anything).Return(int64(0), errors.New("db connection error"))
 		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees", body)
 		req.Header.Set("Content-Type", "application/json")
 		resp, err := server.App.Test(req)
@@ -273,7 +273,7 @@ func TestAddEmployee(t *testing.T) {
 			"created_at": "%s",
 			"updated_at": "%s"
 		}`, entity.Name, entity.Surname, entity.Age, now.Format(time.RFC3339), now.Format(time.RFC3339)))
-		svc.On("Add", mock.Anything).Return(Response{Id: 1}, nil)
+		svc.On("Add", mock.Anything, mock.Anything).Return(Response{Id: 1}, nil)
 		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees/add", body)
 		req.Header.Set("Content-Type", "application/json")
 		resp, err := server.App.Test(req)
@@ -328,7 +328,7 @@ func TestAddEmployee(t *testing.T) {
 			"created_at": "%s",
 			"updated_at": "%s"
 		}`, entity.Name, entity.Surname, entity.Age, now.Format(time.RFC3339), now.Format(time.RFC3339)))
-		svc.On("Add", mock.Anything).Return(Response{}, common.RequestValidationError{Message: "validation failed"})
+		svc.On("Add", mock.Anything, mock.Anything).Return(Response{}, common.RequestValidationError{Message: "validation failed"})
 		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees/add", body)
 		req.Header.Set("Content-Type", "application/json")
 
@@ -381,7 +381,7 @@ func TestDeleteByIdEmployee(t *testing.T) {
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
 
-		svc.On("DeleteById", int64(2)).Return(Response{Id: 2}, nil)
+		svc.On("DeleteById", mock.Anything, int64(2)).Return(Response{Id: 2}, nil)
 		req := httptest.NewRequest(fiber.MethodDelete, "/api/v1/employees/2", nil)
 		resp, err := server.App.Test(req)
 		a.Nil(err)
@@ -396,7 +396,7 @@ func TestDeleteByIdEmployee(t *testing.T) {
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
 
-		svc.On("DeleteById", int64(0)).Return(Response{Id: 0}, nil)
+		svc.On("DeleteById", mock.Anything, int64(0)).Return(Response{Id: 0}, nil)
 		req := httptest.NewRequest(fiber.MethodDelete, "/api/v1/employees/abc", nil)
 		resp, err := server.App.Test(req)
 		a.Nil(err)
@@ -411,7 +411,7 @@ func TestDeleteByIdEmployee(t *testing.T) {
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
 
-		svc.On("DeleteById", int64(0)).Return(Response{Id: 0}, errors.New("db failure"))
+		svc.On("DeleteById", mock.Anything, int64(0)).Return(Response{Id: 0}, errors.New("db failure"))
 		req := httptest.NewRequest(fiber.MethodDelete, "/api/v1/employees/0", nil)
 		resp, err := server.App.Test(req, -1)
 		a.Nil(err)
@@ -433,7 +433,7 @@ func TestDeleteByIdEmployee(t *testing.T) {
 		handler := Handler{Server: server, employeeService: svc, logger: logger}
 		handler.RegisterRoutes()
 
-		svc.On("DeleteById", int64(0)).Return(Response{Id: 0}, nil)
+		svc.On("DeleteById", mock.Anything, int64(0)).Return(Response{Id: 0}, nil)
 		req := httptest.NewRequest(fiber.MethodDelete, "/api/v1/employees/abc", nil)
 		resp, err := server.App.Test(req)
 		a.Nil(err)
@@ -464,7 +464,7 @@ func TestDeleteByIdsEmployees(t *testing.T) {
 
 		expected := []Response{{Id: 1}, {Id: 2}}
 		input := []int64{1, 2}
-		svc.On("DeleteByIds", input).Return(expected, nil)
+		svc.On("DeleteByIds", mock.Anything, input).Return(expected, nil)
 
 		body, _ := json.Marshal(input)
 		req := httptest.NewRequest(fiber.MethodDelete, "/api/v1/employees/ids", bytes.NewReader(body))
@@ -501,7 +501,7 @@ func TestDeleteByIdsEmployees(t *testing.T) {
 		handler.RegisterRoutes()
 		expected := []Response{{Id: 0}}
 		input := []int64{1, 2}
-		svc.On("DeleteByIds", input).Return(expected, errors.New("service error")).Once()
+		svc.On("DeleteByIds", mock.Anything, input).Return(expected, errors.New("service error")).Once()
 		body, _ := json.Marshal(input)
 		req := httptest.NewRequest(fiber.MethodDelete, "/api/v1/employees/ids", bytes.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
