@@ -88,7 +88,7 @@ func build(database *sqlx.DB, logger *common.Logger, cfg common.Config) *web.Ser
 	server.App.Use(recover.New())
 	server.GroupApi.Use(web.AuthMiddleware(logger))
 	var employeeRepo = employee.NewEmployeeRepository(database)
-	var employeeService = employee.NewService(employeeRepo)
+	var employeeService = employee.NewService(employeeRepo, logger)
 	var employeeHandler = employee.NewHandler(server, employeeService, logger)
 	employeeHandler.RegisterRoutes()
 	var roleRepo = role.NewRepository(database)

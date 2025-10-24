@@ -45,7 +45,7 @@ func SetupTestServerAdmin(t *testing.T) (*web.Server, *sqlx.DB) {
 	server.GroupApi.Use(auth)
 
 	employeeRepo := employee.NewEmployeeRepository(db)
-	employeeService := employee.NewService(employeeRepo)
+	employeeService := employee.NewService(employeeRepo, logger)
 	employeeHandler := employee.NewHandler(server, employeeService, logger)
 	employeeHandler.RegisterRoutes()
 
@@ -68,7 +68,7 @@ func SetupTestServerUser(t *testing.T) *web.Server {
 	}
 	server.GroupApi.Use(auth)
 	employeeRepo := employee.NewEmployeeRepository(db)
-	employeeService := employee.NewService(employeeRepo)
+	employeeService := employee.NewService(employeeRepo, logger)
 	employeeHandler := employee.NewHandler(server, employeeService, logger)
 	employeeHandler.RegisterRoutes()
 	return server
@@ -100,7 +100,8 @@ func TestServiceNilCheck(t *testing.T) {
 	repo := employee.NewEmployeeRepository(db)
 	a.NotNil(repo)
 
-	svc := employee.NewService(repo)
+	logger := common.NewLogger(cfg)
+	svc := employee.NewService(repo, logger)
 	a.NotNil(svc)
 
 	ctx := context.Background()
