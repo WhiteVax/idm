@@ -1,0 +1,15 @@
+FROM postgres:17
+
+RUN apt-get update && apt-get install -y \
+    wget \
+    curl \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /migrations
+
+# Скачиваем и распаковываем бинарник Goose
+ENV GOOSE_VERSION=v3.25.0
+RUN wget -O goose https://github.com/pressly/goose/releases/download/${GOOSE_VERSION}/goose_linux_x86_64 \
+    && chmod +x goose \
+    && mv goose /usr/local/bin/goose

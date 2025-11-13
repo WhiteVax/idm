@@ -1,0 +1,381 @@
+basePath: /api/v1/
+definitions:
+  employee.CreateRequest:
+    properties:
+      age:
+        maximum: 90
+        minimum: 16
+        type: integer
+      created_at:
+        example: "2025-07-29T12:00:00Z"
+        type: string
+      name:
+        maxLength: 155
+        minLength: 2
+        type: string
+      surname:
+        maxLength: 155
+        minLength: 2
+        type: string
+      updated_at:
+        example: "2025-07-29T12:00:00Z"
+        type: string
+    required:
+    - age
+    - created_at
+    - name
+    - surname
+    - updated_at
+    type: object
+  employee.Entity:
+    properties:
+      age:
+        type: integer
+      createdAt:
+        description: '@example 2025-07-29T12:00:00Z'
+        example: "2025-07-29T12:00:00Z"
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      surname:
+        type: string
+      updatedAt:
+        description: '@example 2025-07-29T12:00:00Z'
+        example: "2025-07-29T12:00:00Z"
+        type: string
+    type: object
+  employee.PageResponse:
+    properties:
+      page_num:
+        type: integer
+      page_size:
+        type: integer
+      result:
+        items:
+          $ref: '#/definitions/employee.Response'
+        type: array
+      text_filter:
+        type: string
+      total:
+        type: integer
+    type: object
+  employee.Response:
+    properties:
+      age:
+        type: integer
+      created_at:
+        example: "2025-07-29T12:00:00Z"
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      surname:
+        type: string
+      updated_at:
+        example: "2025-07-29T12:00:00Z"
+        type: string
+    type: object
+  idm_inner_common.Response-array_employee_Entity:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/employee.Entity'
+        type: array
+      error:
+        type: string
+      success:
+        type: boolean
+    type: object
+  idm_inner_common.Response-employee_Entity:
+    properties:
+      data:
+        $ref: '#/definitions/employee.Entity'
+      error:
+        type: string
+      success:
+        type: boolean
+    type: object
+info:
+  contact: {}
+  title: IDM API documentation
+  version: "1.0"
+paths:
+  /employees:
+    get:
+      consumes:
+      - application/json
+      description: Get all employees.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/idm_inner_common.Response-employee_Entity'
+        "400":
+          description: invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: error db
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: get employees
+      tags:
+      - employee
+    post:
+      consumes:
+      - application/json
+      description: Create a new employee.
+      parameters:
+      - description: create employee request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/employee.CreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/idm_inner_common.Response-employee_Entity'
+        "400":
+          description: invalid request
+          schema:
+            $ref: '#/definitions/idm_inner_common.Response-employee_Entity'
+        "500":
+          description: error db
+          schema:
+            $ref: '#/definitions/idm_inner_common.Response-employee_Entity'
+      security:
+      - BearerAuth: []
+      summary: create a new employee
+      tags:
+      - employee
+  /employees/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete employee by id.
+      parameters:
+      - description: Employee ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/idm_inner_common.Response-employee_Entity'
+        "400":
+          description: invalid request
+          schema:
+            $ref: '#/definitions/idm_inner_common.Response-employee_Entity'
+        "500":
+          description: error db
+          schema:
+            $ref: '#/definitions/idm_inner_common.Response-employee_Entity'
+      security:
+      - BearerAuth: []
+      summary: delete employee
+      tags:
+      - employee
+    post:
+      consumes:
+      - application/json
+      description: Find employee by id.
+      parameters:
+      - description: Employee ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/idm_inner_common.Response-employee_Entity'
+        "400":
+          description: invalid request
+          schema:
+            $ref: '#/definitions/idm_inner_common.Response-employee_Entity'
+        "500":
+          description: error db
+          schema:
+            $ref: '#/definitions/idm_inner_common.Response-employee_Entity'
+      security:
+      - BearerAuth: []
+      summary: find employee
+      tags:
+      - employee
+  /employees/add:
+    post:
+      consumes:
+      - application/json
+      description: Create a new employee with secure transaction.
+      parameters:
+      - description: create employee request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/employee.CreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/idm_inner_common.Response-employee_Entity'
+        "400":
+          description: invalid request
+          schema:
+            $ref: '#/definitions/idm_inner_common.Response-employee_Entity'
+        "500":
+          description: error db
+          schema:
+            $ref: '#/definitions/idm_inner_common.Response-employee_Entity'
+      security:
+      - BearerAuth: []
+      summary: create a new employee with transaction
+      tags:
+      - employee
+  /employees/ids:
+    delete:
+      consumes:
+      - application/json
+      description: Delete employees by ids.
+      parameters:
+      - description: Employee IDs
+        in: body
+        name: request
+        required: true
+        schema:
+          items:
+            type: integer
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/idm_inner_common.Response-array_employee_Entity'
+        "400":
+          description: invalid request
+          schema:
+            $ref: '#/definitions/idm_inner_common.Response-array_employee_Entity'
+        "500":
+          description: error db
+          schema:
+            $ref: '#/definitions/idm_inner_common.Response-array_employee_Entity'
+      security:
+      - BearerAuth: []
+      summary: delete employees
+      tags:
+      - employee
+    post:
+      consumes:
+      - application/json
+      description: Find employees by ids.
+      parameters:
+      - description: Employee IDs
+        in: body
+        name: request
+        required: true
+        schema:
+          items:
+            type: integer
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/idm_inner_common.Response-array_employee_Entity'
+        "400":
+          description: invalid request
+          schema:
+            $ref: '#/definitions/idm_inner_common.Response-array_employee_Entity'
+        "500":
+          description: error db
+          schema:
+            $ref: '#/definitions/idm_inner_common.Response-array_employee_Entity'
+      security:
+      - BearerAuth: []
+      summary: find employees
+      tags:
+      - employee
+  /employees/page:
+    get:
+      consumes:
+      - application/json
+      description: Find employees by name within limit and offsett.
+      parameters:
+      - description: Page number
+        in: query
+        name: page_number
+        type: integer
+      - description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Text filter
+        in: query
+        name: text_filter
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/employee.PageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/employee.PageResponse'
+        "401":
+          description: Unauthorized or token expired
+          schema:
+            $ref: '#/definitions/employee.PageResponse'
+        "403":
+          description: Permission denied
+          schema:
+            $ref: '#/definitions/employee.PageResponse'
+        "408":
+          description: time out request
+          schema:
+            $ref: '#/definitions/employee.PageResponse'
+        "500":
+          description: db error
+          schema:
+            $ref: '#/definitions/employee.PageResponse'
+      security:
+      - BearerAuth: []
+      summary: find employees by conditions
+      tags:
+      - employee
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

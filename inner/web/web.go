@@ -1,0 +1,38 @@
+package web
+
+import (
+	_ "idm/docs"
+
+	"github.com/gofiber/fiber/v2"
+)
+
+type Server struct {
+	App           *fiber.App
+	GroupApi      fiber.Router
+	GroupApiV1    fiber.Router
+	GroupInternal fiber.Router
+}
+
+type AuthMiddlewareInterface interface {
+	ProtectWithJwt() func(*fiber.Ctx) error
+}
+
+// NewServer - функция-конструктор
+func NewServer() *Server {
+	// новый веб-вервер
+	app := fiber.New(fiber.Config{
+		AppName: "Idm app",
+	})
+	// не публичный
+	groupInternal := app.Group("/internal")
+	// группа "/api"
+	groupApi := app.Group("/api")
+	// подгруппа "api/v1"
+	groupApiV1 := groupApi.Group("/v1")
+	return &Server{
+		App:           app,
+		GroupApi:      groupApi,
+		GroupApiV1:    groupApiV1,
+		GroupInternal: groupInternal,
+	}
+}
